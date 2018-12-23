@@ -75,9 +75,9 @@ def generate_xml(output_list):
             obj.appendChild(truncated)
             obj.appendChild(difficult)
             obj.appendChild(bndbox)
+            annotation.appendChild(obj)
 
         annotation.appendChild(filename)
-        annotation.appendChild(obj)
 
         root.appendChild(annotation)
     
