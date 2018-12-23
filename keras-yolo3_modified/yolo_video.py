@@ -5,10 +5,12 @@ from yolo import YOLO, detect_video
 from PIL import Image
 import xml.dom.minidom
 
+from tqdm import tqdm
+
 def detect_img(yolo):
     img_list = os.listdir('./test')
     output_list = []
-    for img in img_list:
+    for img in tqdm(img_list):
         img_name_withext = os.path.basename(img)
         img_name = os.path.splitext(img_name_withext)[0]
         try:
@@ -50,18 +52,18 @@ def generate_xml(output_list):
             truncated = dom.createElement('truncated')
             truncated.appendChild(dom.createTextNode('0'))
             difficult = dom.createElement('difficult')
-            difficult.appendChild(dom.createTextNode('difficult'))
+            difficult.appendChild(dom.createTextNode('0'))
 
             bndbox = dom.createElement('bndbox')
 
             xmin = dom.createElement('xmin')
-            xmin.appendChild(dom.createTextNode(str(int(output[2][i][0]) * 1.44)))
+            xmin.appendChild(dom.createTextNode(str(int(output[2][i][0] * 1.44))))
             ymin = dom.createElement('ymin')
-            ymin.appendChild(dom.createTextNode(str(int(output[2][i][1]) * 1.44)))
+            ymin.appendChild(dom.createTextNode(str(int(output[2][i][1] * 1.44))))
             xmax = dom.createElement('xmax')
-            xmax.appendChild(dom.createTextNode(str(int(output[2][i][2]) * 1.44)))
+            xmax.appendChild(dom.createTextNode(str(int(output[2][i][2] * 1.44))))
             ymax = dom.createElement('ymax')
-            ymax.appendChild(dom.createTextNode(str(int(output[2][i][3]) * 1.44)))
+            ymax.appendChild(dom.createTextNode(str(int(output[2][i][3] * 1.44))))
 
             bndbox.appendChild(xmin)
             bndbox.appendChild(ymin)

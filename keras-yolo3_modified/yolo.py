@@ -147,9 +147,8 @@ class YOLO(object):
             left = max(0, np.floor(left + 0.5).astype('int32'))
             bottom = min(image.size[1], np.floor(bottom + 0.5).astype('int32'))
             right = min(image.size[0], np.floor(right + 0.5).astype('int32'))
-            print(label, (left, top), (right, bottom))
 
-            num_cls_list.append(label)
+            num_cls_list.append(predicted_class)
             b_box_list.append([left, top, right, bottom])
 
             if top - label_size[1] >= 0:
@@ -169,7 +168,6 @@ class YOLO(object):
             del draw
 
         end = timer()
-        print(end - start)
         return image, num_cls_list, b_box_list
 
     def close_session(self):
