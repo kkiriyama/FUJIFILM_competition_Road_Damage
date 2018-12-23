@@ -32,7 +32,7 @@ def detect_img(yolo):
 def generate_xml(output_list):
     dom = xml.dom.minidom.Document()
 
-    root = dom.createElement('annoataions')
+    root = dom.createElement('annotations')
     dom.appendChild(root)
 
     for output in output_list:
