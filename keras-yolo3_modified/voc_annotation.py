@@ -6,7 +6,7 @@ sets=range(1, 8)
 
 def convert_annotation(location_n, image_id, list_file):
     image_id = image_id.split('.')[0]
-    in_file = open('../train/location%d/labels/%s.xml'%(location_n, image_id))
+    in_file = open('./train/location%d/labels/%s.xml'%(location_n, image_id))
     tree=ET.parse(in_file)
     root = tree.getroot()
 
