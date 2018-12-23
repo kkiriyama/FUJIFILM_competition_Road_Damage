@@ -24,7 +24,7 @@ def detect_img(yolo):
 
     xml = generate_xml(output_list)
     f = open('answer1_YOLO.xml', 'w')
-    xml.writexml(writer = f, encoding = 'UTF-8', newl = '\n', addindent = '\t')
+    f.write(xml)
     f.close()
 
 def generate_xml(output_list):
