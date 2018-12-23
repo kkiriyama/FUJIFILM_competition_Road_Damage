@@ -23,7 +23,7 @@ class YOLO(object):
         "model_path": 'logs/000/trained_weights_final.h5',
         "anchors_path": 'model_data/yolo_anchors.txt',
         "classes_path": 'model_data/voc_classes.txt',
-        "score" : 0.3,
+        "score" : 0.5,
         "iou" : 0.5,
         "model_image_size" : (416, 416),
         "gpu_num" : 1,
@@ -130,6 +130,9 @@ class YOLO(object):
                     size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
         thickness = (image.size[0] + image.size[1]) // 300
 
+        num_cls_list = []
+        b_box_list = []
+
         for i, c in reversed(list(enumerate(out_classes))):
             predicted_class = self.class_names[c]
             box = out_boxes[i]
@@ -145,6 +148,9 @@ class YOLO(object):
             bottom = min(image.size[1], np.floor(bottom + 0.5).astype('int32'))
             right = min(image.size[0], np.floor(right + 0.5).astype('int32'))
             print(label, (left, top), (right, bottom))
+
+            num_cls_list.append(label)
+            b_box_list.append([left, top, right, bottom])
 
             if top - label_size[1] >= 0:
                 text_origin = np.array([left, top - label_size[1]])
@@ -164,7 +170,7 @@ class YOLO(object):
 
         end = timer()
         print(end - start)
-        return image
+        return image, num_cls_list, b_box_list
 
     def close_session(self):
         self.sess.close()

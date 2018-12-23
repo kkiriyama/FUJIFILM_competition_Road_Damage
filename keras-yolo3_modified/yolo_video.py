@@ -3,20 +3,84 @@ import os
 import argparse
 from yolo import YOLO, detect_video
 from PIL import Image
+import xml.dom.minidom
 
 def detect_img(yolo):
-    while True:
-        img = input('Input image filename:')
-        img_name = os.path.basename(img)
+    img_list = os.listdir('./test')
+    output_list = []
+    for img in img_list:
+        img_name_withext = os.path.basename(img)
+        img_name = os.path.splitext(img_name_withext)[0]
         try:
             image = Image.open(img)
         except:
             print('Open Error! Try again!')
             continue
         else:
-            r_image = yolo.detect_image(image)
-            r_image.save('./output_image/raw_model1/output_%s'%(img_name))
+            r_image, n_cls_list, b_box_list = yolo.detect_image(image)
+            output_list.append([img_name_withext, n_cls_list, b_box_list])
+            r_image.save('./output_image/raw_model1/output_%s.jpg'%(img_name))
     yolo.close_session()
+
+    xml = generate_xml(output_list)
+    f = open('answer1_YOLO.xml', 'w', 'utf-8')
+    xml.writexml(writer = f, encoding = 'UTF-8', newl = '\n', addindent = '\t')
+    f.close()
+
+def generate_xml(output_list):
+    dom = xml.dom.minidom.Document()
+
+    root = dom.createElement('annoataions')
+    dom.appendChild(root)
+
+    for output in output_list:
+        annotation = dom.createElement('annotation')
+        
+        filename = dom.createElement('filename')
+        filename.appendChild(dom.createTextNode(output[0]))
+        
+        for i in len(output[1]):
+
+            obj = dom.createElement('object')
+
+            name = dom.createElement('name')
+            name.appendChild(dom.createTextNode(output[1][i]))
+            pose = dom.createElement('pose')
+            pose.appendChild(dom.createTextNode('Unspecified'))
+            truncated = dom.createElement('truncated')
+            truncated.appendChild(dom.createTextNode('0'))
+            difficult = dom.createElement('difficult')
+            difficult.appendChild(dom.createTextNode('difficult'))
+
+            bndbox = dom.createElement('bndbox')
+
+            xmin = dom.createElement('xmin')
+            xmin.appendChild(dom.createTextNode(output[2][i][0]))
+            ymin = dom.createElement('ymin')
+            ymin.appendChild(dom.createTextNode(output[2][i][1]))
+            xmax = dom.createElement('xmax')
+            xmax.appendChild(dom.createTextNode(output[2][i][2]))
+            ymax = dom.createElement('ymax')
+            ymax.appendChild(dom.createTextNode(output[2][i][3]))
+
+            bndbox.appendChild(xmin)
+            bndbox.appendChild(ymin)
+            bndbox.appendChild(xmax)
+            bndbox.appendChild(ymax)
+
+            obj.appendChild(name)
+            obj.appendChild(pose)
+            obj.appendChild(truncated)
+            obj.appendChild(difficult)
+            obj.appendChild(bndbox)
+
+        annotation.appendChild(filename)
+        annotation.appendChild(obj)
+
+        root.appendChild(annotation)
+    
+    return dom.toprettyxml()
+
 
 FLAGS = None
 
