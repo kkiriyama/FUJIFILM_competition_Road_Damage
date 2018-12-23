@@ -1,4 +1,5 @@
 import sys
+import os
 import argparse
 from yolo import YOLO, detect_video
 from PIL import Image
@@ -6,6 +7,7 @@ from PIL import Image
 def detect_img(yolo):
     while True:
         img = input('Input image filename:')
+        img_name = os.path.basename(img)
         try:
             image = Image.open(img)
         except:
@@ -13,7 +15,7 @@ def detect_img(yolo):
             continue
         else:
             r_image = yolo.detect_image(image)
-            r_image.save('./ouput_image/raw_model1')
+            r_image.save('./ouput_image/raw_model1/output_%s.jpg'%(img_name))
     yolo.close_session()
 
 FLAGS = None
