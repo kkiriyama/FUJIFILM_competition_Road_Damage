@@ -39,7 +39,7 @@ def generate_xml(output_list):
         filename = dom.createElement('filename')
         filename.appendChild(dom.createTextNode(output[0]))
         
-        for i in len(output[1]):
+        for i in range(len(output[1])):
 
             obj = dom.createElement('object')
 
@@ -55,13 +55,13 @@ def generate_xml(output_list):
             bndbox = dom.createElement('bndbox')
 
             xmin = dom.createElement('xmin')
-            xmin.appendChild(dom.createTextNode(output[2][i][0]))
+            xmin.appendChild(dom.createTextNode(int(output[2][i][0]) * 1.44))
             ymin = dom.createElement('ymin')
-            ymin.appendChild(dom.createTextNode(output[2][i][1]))
+            ymin.appendChild(dom.createTextNode(int(output[2][i][1]) * 1.44))
             xmax = dom.createElement('xmax')
-            xmax.appendChild(dom.createTextNode(output[2][i][2]))
+            xmax.appendChild(dom.createTextNode(int(output[2][i][2]) * 1.44))
             ymax = dom.createElement('ymax')
-            ymax.appendChild(dom.createTextNode(output[2][i][3]))
+            ymax.appendChild(dom.createTextNode(int(output[2][i][3]) * 1.44))
 
             bndbox.appendChild(xmin)
             bndbox.appendChild(ymin)
