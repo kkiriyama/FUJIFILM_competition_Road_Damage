@@ -12,7 +12,7 @@ def detect_img(yolo):
         img_name_withext = os.path.basename(img)
         img_name = os.path.splitext(img_name_withext)[0]
         try:
-            image = Image.open(img)
+            image = Image.open('./test/' + img)
         except:
             print('Open Error! Try again!')
             continue
@@ -23,7 +23,7 @@ def detect_img(yolo):
     yolo.close_session()
 
     xml = generate_xml(output_list)
-    f = open('answer1_YOLO.xml', 'w', 'utf-8')
+    f = open('answer1_YOLO.xml', 'w')
     xml.writexml(writer = f, encoding = 'UTF-8', newl = '\n', addindent = '\t')
     f.close()
 
