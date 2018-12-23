@@ -15,7 +15,7 @@ def detect_img(yolo):
             continue
         else:
             r_image = yolo.detect_image(image)
-            r_image.save('./output_image/raw_model1/output_%s.jpg'%(img_name))
+            r_image.save('./output_image/raw_model1/output_%s'%(img_name))
     yolo.close_session()
 
 FLAGS = None
