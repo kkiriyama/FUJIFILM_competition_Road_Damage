@@ -13,7 +13,7 @@ def convert_annotation(location_n, image_id, list_file):
     for obj in root.iter('object'):
         cls_id = obj.find('name').text
         xmlbox = obj.find('bndbox')
-        b = (int(xmlbox.find('xmin').text), int(xmlbox.find('ymin').text), int(xmlbox.find('xmax').text), int(xmlbox.find('ymax').text))
+        b = (int(int(xmlbox.find('xmin').text) * 0.693), int(int(xmlbox.find('ymin').text) * 0.693), int(int(xmlbox.find('xmax').text) * 0.693), int(int(xmlbox.find('ymax').text) * 0.693))
         list_file.write(" " + ",".join([str(a) for a in b]) + ',' + str(cls_id))
 
 wd = getcwd()
