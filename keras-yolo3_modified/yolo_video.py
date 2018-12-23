@@ -55,13 +55,13 @@ def generate_xml(output_list):
             bndbox = dom.createElement('bndbox')
 
             xmin = dom.createElement('xmin')
-            xmin.appendChild(dom.createTextNode(int(output[2][i][0]) * 1.44))
+            xmin.appendChild(dom.createTextNode(str(int(output[2][i][0]) * 1.44)))
             ymin = dom.createElement('ymin')
-            ymin.appendChild(dom.createTextNode(int(output[2][i][1]) * 1.44))
+            ymin.appendChild(dom.createTextNode(str(int(output[2][i][1]) * 1.44)))
             xmax = dom.createElement('xmax')
-            xmax.appendChild(dom.createTextNode(int(output[2][i][2]) * 1.44))
+            xmax.appendChild(dom.createTextNode(str(int(output[2][i][2]) * 1.44)))
             ymax = dom.createElement('ymax')
-            ymax.appendChild(dom.createTextNode(int(output[2][i][3]) * 1.44))
+            ymax.appendChild(dom.createTextNode(str(int(output[2][i][3]) * 1.44)))
 
             bndbox.appendChild(xmin)
             bndbox.appendChild(ymin)
