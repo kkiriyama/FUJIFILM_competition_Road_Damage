@@ -46,7 +46,7 @@ def generate_xml(output_list):
             obj = dom.createElement('object')
 
             name = dom.createElement('name')
-            name.appendChild(dom.createTextNode(output[1][i]))
+            name.appendChild(dom.createTextNode(output[1][i] - 1))
             pose = dom.createElement('pose')
             pose.appendChild(dom.createTextNode('Unspecified'))
             truncated = dom.createElement('truncated')
