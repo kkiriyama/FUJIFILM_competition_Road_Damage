@@ -4,6 +4,8 @@ import argparse
 from yolo import YOLO, detect_video
 from PIL import Image
 import xml.dom.minidom
+import numpy as np
+import cv2 as cv
 
 from tqdm import tqdm
 
@@ -21,13 +23,8 @@ def detect_img(yolo):
         else:
             r_image, n_cls_list, b_box_list = yolo.detect_image(image)
             output_list.append([img_name_withext, n_cls_list, b_box_list])
-            r_image.save('./output_image/raw_model1/output_%s.jpg'%(img_name))
     yolo.close_session()
-
-    xml = generate_xml(output_list)
-    f = open('answer1_YOLO.xml', 'w')
-    f.write(xml)
-    f.close()
+    return output_list
 
 def generate_xml(output_list):
     dom = xml.dom.minidom.Document()
@@ -93,11 +90,6 @@ if __name__ == '__main__':
     Command line options
     '''
     parser.add_argument(
-        '--model', type=str,
-        help='path to model weight file, default ' + YOLO.get_defaults("model_path")
-    )
-
-    parser.add_argument(
         '--anchors', type=str,
         help='path to anchor definitions, default ' + YOLO.get_defaults("anchors_path")
     )
@@ -113,7 +105,7 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        '--image', default=False, action="store_true",
+        '--image', default=True, action="store_true",
         help='Image detection mode, will ignore all positional arguments'
     )
     '''
@@ -131,15 +123,64 @@ if __name__ == '__main__':
 
     FLAGS = parser.parse_args()
 
-    if FLAGS.image:
-        """
-        Image detection mode, disregard any remaining command line arguments
-        """
-        print("Image detection mode")
-        if "input" in FLAGS:
-            print(" Ignoring remaining command line arguments: " + FLAGS.input + "," + FLAGS.output)
-        detect_img(YOLO(**vars(FLAGS)))
-    elif "input" in FLAGS:
-        detect_video(YOLO(**vars(FLAGS)), FLAGS.input, FLAGS.output)
-    else:
-        print("Must specify at least video_input_path.  See usage with --help.")
+    """
+    Image detection mode, disregard any remaining command line arguments
+    """
+    print("Image detection mode")
+    rets = []
+    for i in range(10):
+        FLAGS.model = '../logs/000/trained_weights_final_%d.h5'%(i)
+        output_list = detect_img(YOLO(**vars(FLAGS)))
+        rets.append(output_list)
+
+
+    dom = xml.dom.minidom.Document()
+    root = dom.createElement('annotations')
+    dom.appendChild(root)
+
+    for i in range(len(rets[0])):
+        annotation = dom.createElement('annotation')
+        filename = dom.createElement('filename')
+        annotation.appendChild(filename)
+        for j in range(1, 9):
+            img = np.zeros((600, 600))
+            for k in range(10):
+                for m in range(rets[k][i][1]):
+                    if (int(rets[k][i][1][m]) - 1 == j):
+                        img[rets[k][i][2][m][0]:rets[k][i][2][m][2], rets[k][i][2][m][1]:rets[k][i][2][m][3]] += 1
+            img[img < 5] = 0
+            img[img >= 5] = 100
+            dst, contours, hierarchy = cv.findContours(img, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+            for i, contour in enumerate(contours):
+                if area < 500:
+                    continue
+                obj = dom.createElement('object')
+                name = dom.createElement('name')
+                name.appendChild(dom.createTextNode(str(j - 1)))
+                area = cv.contourArea(contour)
+                x,y,w,h = cv.boundingRect(contour)
+
+                xmin = dom.createElement('xmin')
+                xmin.appendChild(dom.createTextNode(str(x)))
+                obj.appendChild(xmin)
+                ymin = dom.createElement('ymin')
+                ymin.appendChild(dom.createTextNode(str(x)))
+                obj.appendChild(ymin)
+                xmax = dom.createElement('xmax')
+                xmax.appendChild(dom.createTextNode(str(x)))
+                obj.appendChild(xmax)
+                ymax = dom.createElement('ymax')
+                ymax.appendChild(dom.createTextNode(str(x)))
+                obj.appendChild(ymax)
+                annotation.appendChild(obj)
+        root.appendChild(annotation)
+    
+    f = open('YOLO_answer_2.xml', 'a')
+    f.write(dom.toprettyxml())
+    f.close()
+
+
+
+
+        
+
