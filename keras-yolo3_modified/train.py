@@ -53,7 +53,7 @@ def _main():
 
     for i in range(10):
         train_split_data = np.split(lines, [int(len(lines) * split[i]), int(len(lines) * split[i + 1])])
-        train_data = train_split_data[0].extend(train_split_data[2])
+        train_data = np.hstack((train_split_data[0], train_split_data[2]))
         val_data = lines[int(len(lines) * split[i]) : int(len(lines) * split[i + 1])]
         # Train with frozen layers first, to get a stable loss.
         # Adjust num epochs to your dataset. This step is enough to obtain a not bad model.
