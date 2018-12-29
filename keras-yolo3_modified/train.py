@@ -28,7 +28,7 @@ def _main():
 
     models = []
 
-    for i in range(10):
+    for i in range(5):
         if is_tiny_version:
             model = create_tiny_model(input_shape, anchors, num_classes,
                 freeze_body=2, weights_path='model_data/yolo_tiny.h5')
@@ -43,7 +43,7 @@ def _main():
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=3, verbose=1)
     early_stopping = EarlyStopping(monitor='val_loss', min_delta=0, patience=10, verbose=1)
 
-    split = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+    split = [0, 0.2, 0.4, 0.6, 0.8, 1]
     with open(annotation_path) as f:
         lines = f.readlines()
     np.random.seed(10101)
@@ -51,7 +51,7 @@ def _main():
     np.random.seed(None)
     lines = np.array(lines)
 
-    for i in range(10):
+    for i in range(5):
         train_split_data = np.split(lines, [int(len(lines) * split[i]), int(len(lines) * split[i + 1])])
         train_data = np.hstack((train_split_data[0], train_split_data[2]))
         val_data = lines[int(len(lines) * split[i]) : int(len(lines) * split[i + 1])]

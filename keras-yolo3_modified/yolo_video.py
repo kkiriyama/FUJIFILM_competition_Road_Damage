@@ -128,7 +128,7 @@ if __name__ == '__main__':
     """
     print("Image detection mode")
     rets = []
-    for i in range(10):
+    for i in range(5):
         FLAGS.model = '../logs/000/trained_weights_final_%d.h5'%(i)
         output_list = detect_img(YOLO(**vars(FLAGS)))
         rets.append(output_list)
@@ -144,12 +144,12 @@ if __name__ == '__main__':
         annotation.appendChild(filename)
         for j in range(1, 9):
             img = np.zeros((600, 600))
-            for k in range(10):
+            for k in range(5):
                 for m in range(rets[k][i][1]):
                     if (int(rets[k][i][1][m]) - 1 == j):
                         img[rets[k][i][2][m][0]:rets[k][i][2][m][2], rets[k][i][2][m][1]:rets[k][i][2][m][3]] += 1
-            img[img < 5] = 0
-            img[img >= 5] = 100
+            img[img < 3] = 0
+            img[img >= 3] = 100
             dst, contours, hierarchy = cv.findContours(img, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
             for i, contour in enumerate(contours):
                 if area < 500:
