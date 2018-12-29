@@ -65,9 +65,9 @@ def _main():
             batch_size = 32
             print('Train on {} samples, val on {} samples, with batch size {}.'.format(int(len(lines) * 0.9), int(len(lines) * 0.1), batch_size))
             model.fit_generator(data_generator_wrapper(train_data, batch_size, input_shape, anchors, num_classes),
-                    steps_per_epoch=max(1, int(len(lines) * 0.9)//batch_size),
+                    steps_per_epoch=max(1, int(len(lines) * 0.8)//batch_size),
                     validation_data=data_generator_wrapper(val_data, batch_size, input_shape, anchors, num_classes),
-                    validation_steps=max(1, int(len(lines) * 0.1)//batch_size),
+                    validation_steps=max(1, int(len(lines) * 0.2)//batch_size),
                     epochs=10,
                     initial_epoch=0,
                     callbacks=[logging, checkpoint])
@@ -84,9 +84,9 @@ def _main():
             batch_size = 8 # note that more GPU memory is required after unfreezing the body
             print('Train on {} samples, val on {} samples, with batch size {}.'.format(int(len(lines) * 0.9), int(len(lines) * 0.1), batch_size))
             model.fit_generator(data_generator_wrapper(train_data, batch_size, input_shape, anchors, num_classes),
-                steps_per_epoch=max(1, int(len(lines) * 0.9)//batch_size),
+                steps_per_epoch=max(1, int(len(lines) * 0.8)//batch_size),
                 validation_data=data_generator_wrapper(val_data, batch_size, input_shape, anchors, num_classes),
-                validation_steps=max(1, int(len(lines) * 0.1)//batch_size),
+                validation_steps=max(1, int(len(lines) * 0.2)//batch_size),
                 epochs=20,
                 initial_epoch=5,
                 callbacks=[logging, checkpoint, reduce_lr, early_stopping])

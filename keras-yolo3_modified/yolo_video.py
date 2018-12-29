@@ -23,6 +23,7 @@ def detect_img(yolo):
         else:
             r_image, n_cls_list, b_box_list = yolo.detect_image(image)
             output_list.append([img_name_withext, n_cls_list, b_box_list])
+            print(n_cls_list)
     yolo.close_session()
     return output_list
 
@@ -90,6 +91,9 @@ if __name__ == '__main__':
     Command line options
     '''
     parser.add_argument(
+        '--use_CV', default = False 
+    )
+    parser.add_argument(
         '--anchors', type=str,
         help='path to anchor definitions, default ' + YOLO.get_defaults("anchors_path")
     )
@@ -127,57 +131,65 @@ if __name__ == '__main__':
     Image detection mode, disregard any remaining command line arguments
     """
     print("Image detection mode")
-    rets = []
-    for i in range(5):
-        FLAGS.model = '../logs/000/trained_weights_final_%d.h5'%(i)
+    if FLAGS.use_CV:
+        rets = []
+        for i in range(5):
+            FLAGS.model = '../logs/000/trained_weights_final_%d.h5'%(i)
+            output_list = detect_img(YOLO(**vars(FLAGS)))
+            rets.append(output_list)
+
+
+        dom = xml.dom.minidom.Document()
+        root = dom.createElement('annotations')
+        dom.appendChild(root)
+
+        for i in range(len(rets[0])):
+            annotation = dom.createElement('annotation')
+            filename = dom.createElement('filename')
+            annotation.appendChild(filename)
+            for j in range(1, 9):
+                img = np.zeros((600, 600))
+                for k in range(5):
+                    for m in range(rets[k][i][1]):
+                        if (int(rets[k][i][1][m]) - 1 == j):
+                            img[rets[k][i][2][m][0]:rets[k][i][2][m][2], rets[k][i][2][m][1]:rets[k][i][2][m][3]] += 1
+                img[img < 3] = 0
+                img[img >= 3] = 100
+                dst, contours, hierarchy = cv.findContours(img, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+                for i, contour in enumerate(contours):
+                    if area < 500:
+                        continue
+                    obj = dom.createElement('object')
+                    name = dom.createElement('name')
+                    name.appendChild(dom.createTextNode(str(j - 1)))
+                    area = cv.contourArea(contour)
+                    x,y,w,h = cv.boundingRect(contour)
+
+                    xmin = dom.createElement('xmin')
+                    xmin.appendChild(dom.createTextNode(str(x)))
+                    obj.appendChild(xmin)
+                    ymin = dom.createElement('ymin')
+                    ymin.appendChild(dom.createTextNode(str(x)))
+                    obj.appendChild(ymin)
+                    xmax = dom.createElement('xmax')
+                    xmax.appendChild(dom.createTextNode(str(x)))
+                    obj.appendChild(xmax)
+                    ymax = dom.createElement('ymax')
+                    ymax.appendChild(dom.createTextNode(str(x)))
+                    obj.appendChild(ymax)
+                    annotation.appendChild(obj)
+            root.appendChild(annotation)
+        
+        f = open('YOLO_answer_2.xml', 'w')
+        f.write(dom.toprettyxml())
+        f.close()
+    else:
+        FLAGS.model = '../logs/000/trained_weights_final.h5'
         output_list = detect_img(YOLO(**vars(FLAGS)))
-        rets.append(output_list)
-
-
-    dom = xml.dom.minidom.Document()
-    root = dom.createElement('annotations')
-    dom.appendChild(root)
-
-    for i in range(len(rets[0])):
-        annotation = dom.createElement('annotation')
-        filename = dom.createElement('filename')
-        annotation.appendChild(filename)
-        for j in range(1, 9):
-            img = np.zeros((600, 600))
-            for k in range(5):
-                for m in range(rets[k][i][1]):
-                    if (int(rets[k][i][1][m]) - 1 == j):
-                        img[rets[k][i][2][m][0]:rets[k][i][2][m][2], rets[k][i][2][m][1]:rets[k][i][2][m][3]] += 1
-            img[img < 3] = 0
-            img[img >= 3] = 100
-            dst, contours, hierarchy = cv.findContours(img, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-            for i, contour in enumerate(contours):
-                if area < 500:
-                    continue
-                obj = dom.createElement('object')
-                name = dom.createElement('name')
-                name.appendChild(dom.createTextNode(str(j - 1)))
-                area = cv.contourArea(contour)
-                x,y,w,h = cv.boundingRect(contour)
-
-                xmin = dom.createElement('xmin')
-                xmin.appendChild(dom.createTextNode(str(x)))
-                obj.appendChild(xmin)
-                ymin = dom.createElement('ymin')
-                ymin.appendChild(dom.createTextNode(str(x)))
-                obj.appendChild(ymin)
-                xmax = dom.createElement('xmax')
-                xmax.appendChild(dom.createTextNode(str(x)))
-                obj.appendChild(xmax)
-                ymax = dom.createElement('ymax')
-                ymax.appendChild(dom.createTextNode(str(x)))
-                obj.appendChild(ymax)
-                annotation.appendChild(obj)
-        root.appendChild(annotation)
-    
-    f = open('YOLO_answer_2.xml', 'a')
-    f.write(dom.toprettyxml())
-    f.close()
+        xml = generate_xml(output_list)
+        f = open('YOLO_answer_scaled_9.xml', 'w')
+        f.write(xml)
+        f.close()
 
 
 
