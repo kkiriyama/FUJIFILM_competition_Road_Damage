@@ -4,10 +4,11 @@ Retrain the YOLO model for your own dataset.
 
 import numpy as np
 import keras.backend as K
-from keras.layers import Input, Lambda
-from keras.models import Model
-from keras.optimizers import Adam
-from keras.callbacks import TensorBoard, ModelCheckpoint, ReduceLROnPlateau, EarlyStopping
+from tensorflow.keras.layers import Input, Lambda
+from tensorflow.keras.models import Model
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint, ReduceLROnPlateau, EarlyStopping
+import tensorflow as tf
 
 from yolo3.model import preprocess_true_boxes, yolo_body, tiny_yolo_body, yolo_loss
 from yolo3.utils import get_random_data
@@ -35,6 +36,14 @@ def _main():
         else:
             model = create_model(input_shape, anchors, num_classes,
                 freeze_body=2, weights_path='model_data/yolo.h5') # make sure you know what you freeze
+        model = tf.contrib.tpu.keras_to_tpu_model(
+            model,
+            strategy = tf.contib.tpu.TPUDistributionStrategy(
+                tf.contib.cluster_resolver.TPUClusterResolver(
+                    tpu = 'grpc://' + os.environ['COLAB_TPU_ADDR']
+                )
+            )
+        )
         models.append(model)
 
     logging = TensorBoard(log_dir=log_dir)
