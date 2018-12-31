@@ -65,7 +65,7 @@ def _main():
                 # use custom yolo_loss Lambda layer.
                 'yolo_loss': lambda y_true, y_pred: y_pred})
 
-            batch_size = 64 
+            batch_size = 32
             print('Train on {} samples, val on {} samples, with batch size {}.'.format(int(len(lines) * 0.9), int(len(lines) * 0.1), batch_size))
             model.fit_generator(data_generator_wrapper(train_data, batch_size, input_shape, anchors, num_classes),
                     steps_per_epoch=max(1, int(len(lines) * 0.8)//batch_size),
@@ -84,7 +84,7 @@ def _main():
             model.compile(optimizer=Adam(lr=1e-4), loss={'yolo_loss': lambda y_true, y_pred: y_pred}) # recompile to apply the change
             print('Unfreeze all of the layers.')
 
-            batch_size = 32 # note that more GPU memory is required after unfreezing the body
+            batch_size = 8 # note that more GPU memory is required after unfreezing the body
             print('Train on {} samples, val on {} samples, with batch size {}.'.format(int(len(lines) * 0.9), int(len(lines) * 0.1), batch_size))
             model.fit_generator(data_generator_wrapper(train_data, batch_size, input_shape, anchors, num_classes),
                 steps_per_epoch=max(1, int(len(lines) * 0.8)//batch_size),
