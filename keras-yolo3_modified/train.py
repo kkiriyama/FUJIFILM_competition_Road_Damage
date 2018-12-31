@@ -38,14 +38,6 @@ def _main():
         else:
             model = create_model(input_shape, anchors, num_classes,
                 freeze_body=2, weights_path='model_data/yolo.h5') # make sure you know what you freeze
-        model = tf.contrib.tpu.keras_to_tpu_model(
-            model,
-            strategy = tf.contib.tpu.TPUDistributionStrategy(
-                tf.contib.cluster_resolver.TPUClusterResolver(
-                    tpu = 'grpc://' + os.environ['COLAB_TPU_ADDR']
-                )
-            )
-        )
         models.append(model)
 
     logging = TensorBoard(log_dir=log_dir)
@@ -138,8 +130,8 @@ def create_model(input_shape, anchors, num_classes, load_pretrained=True, freeze
     if load_pretrained:
         model_body.load_weights(
             weights_path,
-            by_name=True
-            # skip_mismatch=True
+            by_name=True,
+            skip_mismatch=True
             )
         print('Load weights {}.'.format(weights_path))
         if freeze_body in [1, 2]:
@@ -172,8 +164,8 @@ def create_tiny_model(input_shape, anchors, num_classes, load_pretrained=True, f
     if load_pretrained:
         model_body.load_weights(
             weights_path,
-            by_name=True
-            # skip_mismatch=True
+            by_name=True,
+            skip_mismatch=True
         )
         print('Load weights {}.'.format(weights_path))
         if freeze_body in [1, 2]:
