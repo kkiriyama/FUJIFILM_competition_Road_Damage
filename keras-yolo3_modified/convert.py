@@ -9,6 +9,7 @@ import configparser
 import io
 import os
 from collections import defaultdict
+import tensorflow as tf
 
 import numpy as np
 from tensorflow.keras import backend as K

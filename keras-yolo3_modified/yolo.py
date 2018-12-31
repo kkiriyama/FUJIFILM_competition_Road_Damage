@@ -7,6 +7,7 @@ import colorsys
 import os
 from timeit import default_timer as timer
 
+import tensorflow as tf
 import numpy as np
 from tensorflow.keras import backend as K
 from tensorflow.keras.models import load_model
