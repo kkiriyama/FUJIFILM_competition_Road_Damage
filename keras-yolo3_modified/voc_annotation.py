@@ -11,6 +11,8 @@ def convert_annotation(location_n, image_id, list_file):
     tree=ET.parse(in_file)
     root = tree.getroot()
 
+    rate = 0
+
     for obj in root.iter('object'):
         cls_id = obj.find('name').text
         xmlbox = obj.find('bndbox')
@@ -18,10 +20,10 @@ def convert_annotation(location_n, image_id, list_file):
         ymin = int(xmlbox.find('ymin').text) * 0.693
         xmax = int(xmlbox.find('xmax').text) * 0.693
         ymax = int(xmlbox.find('ymax').text) * 0.693
-        scaled_xmin = int((((xmin + xmax) / 2 - xmin) * 0.05) + xmin)
-        scaled_ymin = int((((ymin + ymax) / 2 - ymin) * 0.05) + ymin)
-        scaled_xmax = int(xmax - (((xmin + xmax) / 2 - xmin) * 0.05))
-        scaled_ymax = int(ymax - (((ymin + ymax) / 2 - ymin) * 0.05))
+        scaled_xmin = int((((xmin + xmax) / 2 - xmin) * rate) + xmin)
+        scaled_ymin = int((((ymin + ymax) / 2 - ymin) * rate) + ymin)
+        scaled_xmax = int(xmax - (((xmin + xmax) / 2 - xmin) * rate))
+        scaled_ymax = int(ymax - (((ymin + ymax) / 2 - ymin) * rate))
         b = (scaled_xmin, scaled_ymin, scaled_xmax, scaled_ymax)
         list_file.write(" " + ",".join([str(a) for a in b]) + ',' + str(cls_id))
 
