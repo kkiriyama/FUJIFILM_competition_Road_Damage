@@ -9,15 +9,15 @@ from timeit import default_timer as timer
 
 import tensorflow as tf
 import numpy as np
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.models import load_model
-from tensorflow.python.keras.layers import Input
+from keras import backend as K
+from keras.models import load_model
+from keras.layers import Input
 from PIL import Image, ImageFont, ImageDraw
 
 from yolo3.model import yolo_eval, yolo_body, tiny_yolo_body
 from yolo3.utils import letterbox_image
 import os
-from tensorflow.python.keras.utils import multi_gpu_model
+from keras.utils import multi_gpu_model
 
 class YOLO(object):
     _defaults = {
