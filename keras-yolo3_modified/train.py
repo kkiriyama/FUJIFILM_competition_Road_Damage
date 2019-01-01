@@ -196,17 +196,14 @@ def data_generator(annotation_lines, batch_size, input_shape, anchors, num_class
             box_data.append(box)
             i = (i+1) % n
         image_data = np.array(image_data)
-        print(image_data.shape)
         box_data = np.array(box_data)
-        print(box_data.shape)
         y_true = preprocess_true_boxes(box_data, input_shape, anchors, num_classes)
         yield [image_data, *y_true], np.zeros(batch_size)
 
 def data_generator_wrapper(annotation_lines, batch_size, input_shape, anchors, num_classes):
     n = len(annotation_lines)
+    print(n)
     if n==0 or batch_size<=0: return None
-    
-    print(next(data_generator(annotation_lines, batch_size, input_shape, anchors, num_classes)))
     return data_generator(annotation_lines, batch_size, input_shape, anchors, num_classes)
 
 if __name__ == '__main__':
