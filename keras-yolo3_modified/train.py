@@ -91,7 +91,7 @@ def _main():
                 validation_data=data_generator_wrapper(val_data, batch_size, input_shape, anchors, num_classes),
                 validation_steps=max(1, int(len(lines) * 0.2)//batch_size),
                 epochs=20,
-                initial_epoch=5,
+                initial_epoch=10,
                 callbacks=[logging, checkpoint, reduce_lr, early_stopping])
             model.save(log_dir + 'trained_weights_final_%d.h5'%(i))
 
@@ -198,11 +198,14 @@ def data_generator(annotation_lines, batch_size, input_shape, anchors, num_class
         image_data = np.array(image_data)
         box_data = np.array(box_data)
         y_true = preprocess_true_boxes(box_data, input_shape, anchors, num_classes)
+        print(y_true)
         yield [image_data, *y_true], np.zeros(batch_size)
 
 def data_generator_wrapper(annotation_lines, batch_size, input_shape, anchors, num_classes):
     n = len(annotation_lines)
     if n==0 or batch_size<=0: return None
+    
+    print(next(data_generator))
     return data_generator(annotation_lines, batch_size, input_shape, anchors, num_classes)
 
 if __name__ == '__main__':
