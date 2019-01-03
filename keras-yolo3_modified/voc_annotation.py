@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
 import os
 from os import getcwd
+from tqdm import tqdm
 
 sets=range(1, 8)
 scale = 0.05
@@ -31,8 +32,9 @@ wd = getcwd()
 
 list_file = open('train_scaled.txt', 'w')
 for location_n in sets:
+    print(location_n)   
     image_ids = os.listdir('./train/location%d/images'%(location_n))
-    for image_id in image_ids:
+    for image_id in tqdm(image_ids):
         list_file.write('%s/train/location%s/images/%s'%(wd, location_n, image_id))
         convert_annotation(location_n, image_id, list_file)
         list_file.write('\n')
