@@ -6,7 +6,7 @@ from PIL import Image
 from tqdm import tqdm
 
 for i in range(1, 8):
-  PATH = '../content/drive/My Drive/fujifilm/detection/keras-0ylo3_modified/train/location%d/images'%(i)
+  PATH = '../content/drive/My Drive/fujifilm/detection/keras-yolo3_modified/train/location%d/images'%(i)
   files = os.listdir(PATH)
   print(len(files))
   for f in tqdm(files):
