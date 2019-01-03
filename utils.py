@@ -6,7 +6,7 @@ from PIL import Image
 from tqdm import tqdm
 
 for i in range(1, 8):
-  files = os.listdir('./keras-yolo3_modified/train/location%d/images'%(i))
+  files = os.listdir('../content/drive/My Drive/detection/keras-yolo3_modified/train/location%d/images'%(i))
   print(len(files))
   for f in tqdm(files):
     img = Image.open(f)
