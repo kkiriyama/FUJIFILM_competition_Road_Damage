@@ -10,6 +10,7 @@ from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.optimizers import Adam
 from tensorflow.python.keras.callbacks import TensorBoard, ModelCheckpoint, ReduceLROnPlateau, EarlyStopping
 import tensorflow as tf
+from tensorflow.contrib.tpu.python.tpu import keras_support
 
 from yolo3.model import preprocess_true_boxes, yolo_body, tiny_yolo_body, yolo_loss
 from yolo3.utils import get_random_data
@@ -81,7 +82,16 @@ def _main():
         if True:
             for k in range(len(model.layers)):
                 model.layers[k].trainable = True
-            model.compile(optimizer=Adam(lr=1e-4), loss={'yolo_loss': lambda y_true, y_pred: y_pred}) # recompile to apply the change
+            model.compile(
+                optimizer=tf.train.AdamOptimizer(learning_rate=1e-3),
+                loss={'yolo_loss': lambda y_true, y_pred: y_pred}
+                ) # recompile to apply the change
+            
+            tpu_grpc_url = "grpc://"+os.environ["COLAB_TPU_ADDR"]
+            tpu_cluster_resolver = tf.contrib.cluster_resolver.TPUClusterResolver(tpu_grpc_url)
+            strategy = keras_support.TPUDistributionStrategy(tpu_cluster_resolver)
+            model = tf.contrib.tpu.keras_to_tpu_model(model, strategy=strategy)
+
             print('Unfreeze all of the layers.')
 
             batch_size = 8 # note that more GPU memory is required after unfreezing the body
