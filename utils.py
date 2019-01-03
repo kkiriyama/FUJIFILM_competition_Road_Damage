@@ -7,6 +7,7 @@ from tqdm import tqdm
 
 for i in range(1, 8):
   files = glob.glob('./keras-yolo3_modified/train/location%d/images/*.jpg'%(i))
+  print(files)
   for f in tqdm(files):
     img = Image.open(f)
     img_resize = img.resize((416, 416))
