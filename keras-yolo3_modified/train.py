@@ -5,10 +5,10 @@ Retrain the YOLO model for your own dataset.
 import numpy as np
 import tensorflow as tf
 import keras.backend as K
-from keras.layers import Input, Lambda
-from keras.models import Model
-from keras.optimizers import Adam
-from keras.callbacks import TensorBoard, ModelCheckpoint, ReduceLROnPlateau, EarlyStopping
+from tensorflow.python.keras.layers import Input, Lambda
+from tensorflow.python.keras.models import Model
+from tensorflow.python.keras.optimizers import Adam
+from tensorflow.python.keras.callbacks import TensorBoard, ModelCheckpoint, ReduceLROnPlateau, EarlyStopping
 import tensorflow as tf
 
 from yolo3.model import preprocess_true_boxes, yolo_body, tiny_yolo_body, yolo_loss
@@ -18,7 +18,7 @@ import os
 
 def _main():
     annotation_path = './train_scaled.txt'
-    log_dir = './logs/000/'
+    log_dir = './logs/001/'
     classes_path = './model_data/voc_classes.txt'
     anchors_path = './model_data/tiny_yolo_anchors.txt'
     class_names = get_classes(classes_path)

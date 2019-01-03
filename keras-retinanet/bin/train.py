@@ -21,15 +21,15 @@ import os
 import sys
 import warnings
 
-import keras
-import keras.preprocessing.image
+import tensorflow.keras
+import tensorflow.keras.preprocessing.image
 import tensorflow as tf
 
 # Allow relative imports when being executed as script.
 if __name__ == "__main__" and __package__ is None:
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
-    import keras_retinanet.bin  # noqa: F401
-    __package__ = "keras_retinanet.bin"
+    import retina.bin  # noqa: F401
+    __package__ = "retina.bin"
 
 # Change these to absolute imports if you copy this script outside the keras_retinanet package.
 from .. import layers  # noqa: F401
@@ -119,6 +119,14 @@ def create_models(backbone_retinanet, num_classes, weights, multi_gpu=0,
         model          = model_with_weights(backbone_retinanet(num_classes, num_anchors=num_anchors, modifier=modifier), weights=weights, skip_mismatch=True)
         training_model = model
 
+    model = tf.contrib.tpu.keras_to_tpu_model(
+        model,
+        strategy = tf.contrib.tpu.TPUDistributionStrategy(
+            tf.contrib.cluster_resolver.TPUClusterresolver(
+                tpu = 'grpc://' + os.environ['COLAB_TPU_ADDR']
+            )
+        )
+    )
     # make prediction model
     prediction_model = retinanet_bbox(model=model, anchor_params=anchor_params)
 

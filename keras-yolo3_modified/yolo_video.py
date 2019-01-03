@@ -9,6 +9,94 @@ import cv2 as cv
 
 from tqdm import tqdm
 
+from skopt import gp_minimize
+
+def calc_score(yolo):
+    split = [0.4, 0.6]
+    annotation_path = './train_scaled.txt'
+    with open(annotation_path) as f:
+        lines = f.readlines()
+    lines = np.array(lines)
+    val_data = lines[int(len(lines) * split[0]) : int(len(lines) * split[1])]
+    F1_scores = []
+    for data in tqdm(val_data):
+        TP = 0
+        split_list = data.split()
+        path = split_list[0]
+        box_list = []
+        for box in split_list[1:]:
+            box_list.append(box.split(','))
+        image = Image.open(path)
+        r_image, n_cls_list, b_box_list, score_list = yolo.detect_image(image)
+        final_predict_counter = 0 
+        for i, predict_class in enumerate(n_cls_list):
+            predict_box = b_box_list[i]
+            score = score_list[i]
+            correct_currentclass_list = []
+            for box in box_list:
+                if int(box[4]) == int(predict_class) - 1:
+                    correct_currentclass_list.append(box)
+            for correct in correct_currentclass_list:
+                c_xmin = int(correct[0])
+                c_ymin = int(correct[1])
+                c_xmax = int(correct[2])
+                c_ymax = int(correct[3])
+                c_center = [(c_xmin + c_xmax)/2, (c_ymin + c_ymax)/2]
+                p_center = [(predict_box[0] + predict_box[2])/2, (predict_box[1] + predict_box[3])/2]
+                c_h = c_ymax - c_ymin
+                c_w = c_xmax - c_xmin
+                p_h = predict_box[3] - predict_box[1]
+                p_w = predict_box[2] - predict_box[0]
+                if ((np.abs(c_center[0] - p_center[0] < (c_w/2 + p_w/2))) & (np.abs(c_center[1] - p_center[1]) < (c_h/2 + p_h/2))):
+                    overlap_w = (c_w/2 + p_w/2) - np.abs(c_center[0] - p_center[0])
+                    overlap_h = (c_h/2 + p_h/2) - np.abs(c_center[1] - p_center[1])
+                    if (overlap_w * overlap_h > (c_h * c_w + p_h * p_w - overlap_h * overlap_w) * 0.5):
+                        TP += 1
+        FP = final_predict_counter - TP
+        FN = len(box_list) - TP
+        TP += 0.0000001
+        precision = TP / (TP + FP)
+        recall = TP / (TP + FN)
+        F1_score = 2 * recall * precision / (recall + precision)
+        F1_scores.append(F1_score)
+    # yolo.close_session()
+    print(np.mean(np.array(F1_scores)))
+    return np.mean(np.array(F1_scores))
+                    
+def calc_score_wrapper(x):
+    x = np.array(x).astype(np.float32)
+    FLAGS.iou = x[1]
+    FLAGS.score = x[0]
+    return -1 * calc_score(YOLO(**vars(FLAGS)))
+
+
+def calc_area(box):
+    w = int(box[2]) - int(box[1])
+    h = int(box[3]) - int(box[0])
+    return w * h 
+
+def scaling_box(box, scale):
+    xmin = int(box[0])
+    ymin = int(box[1])
+    xmax = int(box[2])
+    ymax = int(box[3])
+    s_xmin = int(xmin - (xmax - xmin) / 2 * scale)
+    if s_xmin < 0:
+        s_xmin = 0
+    s_ymin = int(ymin - (ymax - ymin) / 2 * scale)
+    if s_ymin < 0:
+        s_ymin = 0
+    s_xmax = int(xmax + (xmax - xmin) / 2 * scale)
+    if s_xmax > 600:
+        s_xmax = 600
+    s_ymax = int(ymax + (ymax - ymin) / 2 * scale)
+    if s_ymax > 600:
+        s_ymax = 600
+    prev_area = (xmax - xmin) * (ymax - ymin)
+    post_area = (s_xmax - s_xmin) * (s_ymax - s_ymin)
+    print(post_area/prev_area)
+    return [s_xmin, s_ymin, s_xmax, s_ymax]
+
 def detect_img(yolo):
     img_list = os.listdir('./test')
     output_list = []
@@ -21,9 +109,27 @@ def detect_img(yolo):
             print('Open Error! Try again!')
             continue
         else:
-            r_image, n_cls_list, b_box_list = yolo.detect_image(image)
-            output_list.append([img_name_withext, n_cls_list, b_box_list])
-            print(n_cls_list)
+            r_image, n_cls_list, b_box_list, score_list = yolo.detect_image(image)
+            new_b_box_list = []
+            scale = 0.1
+            for i, cls in enumerate(n_cls_list):
+                if cls in ['1', '2', '3', '4']:
+                    if calc_area(b_box_list[i]) > 0:
+                        new_b_box_list.append(scaling_box(b_box_list[i], scale))
+                    else:
+                        new_b_box_list.append(b_box_list[i])
+                elif cls in ['6','8']:
+                    if calc_area(b_box_list[i]) > 0:
+                        new_b_box_list.append(scaling_box(b_box_list[i], scale))
+                    else:
+                        new_b_box_list.append(b_box_list[i])
+                else:
+                    if calc_area(b_box_list[i]) > 0:
+                        new_b_box_list.append(scaling_box(b_box_list[i], scale))
+                    else:
+                        new_b_box_list.append(b_box_list[i])
+            assert len(n_cls_list) == len(new_b_box_list)
+            output_list.append([img_name_withext, n_cls_list, new_b_box_list])
     yolo.close_session()
     return output_list
 
@@ -91,8 +197,9 @@ if __name__ == '__main__':
     Command line options
     '''
     parser.add_argument(
-        '--use_CV', default = False 
+        '--use_CV', type = bool
     )
+
     parser.add_argument(
         '--anchors', type=str,
         help='path to anchor definitions, default ' + YOLO.get_defaults("anchors_path")
@@ -131,9 +238,10 @@ if __name__ == '__main__':
     Image detection mode, disregard any remaining command line arguments
     """
     print("Image detection mode")
+    """
     if FLAGS.use_CV:
         rets = []
-        for i in range(5):
+        for i in range(1):
             FLAGS.model = '../logs/000/trained_weights_final_%d.h5'%(i)
             output_list = detect_img(YOLO(**vars(FLAGS)))
             rets.append(output_list)
@@ -180,19 +288,35 @@ if __name__ == '__main__':
                     annotation.appendChild(obj)
             root.appendChild(annotation)
         
-        f = open('YOLO_answer_2.xml', 'w')
+        f = open('YOLO_answer_3.xml', 'w')
         f.write(dom.toprettyxml())
         f.close()
     else:
-        FLAGS.model = '../logs/000/trained_weights_final.h5'
+        FLAGS.model = './logs/000/trained_weights_final_0.h5'
         output_list = detect_img(YOLO(**vars(FLAGS)))
         xml = generate_xml(output_list)
-        f = open('YOLO_answer_scaled_9.xml', 'w')
+        f = open('YOLO_answer_3.xml', 'w')
         f.write(xml)
         f.close()
+    """
 
+    FLAGS.model = './trained_weights_final_0.h5'
+    output_list = detect_img(YOLO(**vars(FLAGS)))
+    xml = generate_xml(output_list)
+    f = open('YOLO_answer_5fold_CV.xml', 'w')
+    f.write(xml)
+    f.close()
 
-
-
-        
+    """
+    FLAGS.model = './logs/001/trained_weights_final_0.h5'
+    space = [
+        (0.05, 0.15),
+        (0.6, 0.8)
+    ]
+    x0 = [0.1, 0.7]
+    res = gp_minimize(calc_score_wrapper, space, x0 = x0, n_calls = 20)
+    print(-1 * res.fun)
+    print(res.x)
+    """
+    
 

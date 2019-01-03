@@ -11,7 +11,7 @@ def convert_annotation(location_n, image_id, list_file):
     tree=ET.parse(in_file)
     root = tree.getroot()
 
-    rate = 0.05
+    rate = 0
 
     for obj in root.iter('object'):
         cls_id = obj.find('name').text

@@ -9,23 +9,23 @@ from timeit import default_timer as timer
 
 import tensorflow as tf
 import numpy as np
-from keras import backend as K
-from keras.models import load_model
-from keras.layers import Input
+from tensorflow.keras import backend as K
+from tensorflow.python.keras.models import load_model
+from tensorflow.python.keras.layers import Input
 from PIL import Image, ImageFont, ImageDraw
 
 from yolo3.model import yolo_eval, yolo_body, tiny_yolo_body
 from yolo3.utils import letterbox_image
 import os
-from keras.utils import multi_gpu_model
+from tensorflow.python.keras.utils import multi_gpu_model
 
 class YOLO(object):
     _defaults = {
-        "model_path": 'logs/000/trained_weights_final.h5',
+        "model_path": './trained_weights_final_0.h5',
         "anchors_path": 'model_data/yolo_anchors.txt',
         "classes_path": 'model_data/voc_classes.txt',
-        "score" : 0.3,
-        "iou" : 0.5,
+        "score" : 0.25,
+        "iou" : 0.3,
         "model_image_size" : (416, 416),
         "gpu_num" : 1,
     }
@@ -130,6 +130,7 @@ class YOLO(object):
 
         num_cls_list = []
         b_box_list = []
+        score_list = []
 
         for i, c in reversed(list(enumerate(out_classes))):
             predicted_class = self.class_names[c]
@@ -148,6 +149,7 @@ class YOLO(object):
 
             num_cls_list.append(predicted_class)
             b_box_list.append([left, top, right, bottom])
+            score_list.append(score)
 
             if top - label_size[1] >= 0:
                 text_origin = np.array([left, top - label_size[1]])
@@ -166,7 +168,7 @@ class YOLO(object):
             del draw
 
         end = timer()
-        return image, num_cls_list, b_box_list
+        return image, num_cls_list, b_box_list, score_list
 
     def close_session(self):
         self.sess.close()
