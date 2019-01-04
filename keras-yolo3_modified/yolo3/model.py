@@ -390,10 +390,10 @@ def yolo_loss(args, anchors, num_classes, ignore_thresh=.5, print_loss=False):
             true_box = tf.boolean_mask(y_true[l][b,...,0:4], object_mask_bool[b,...,0])
             iou = box_iou(pred_box[b], true_box)
             best_iou = K.max(iou, axis=-1)
-            ignore_mask = ignore_masK.write(b, K.cast(best_iou<ignore_thresh, true_box.dtype))
+            ignore_mask = ignore_mask.write(b, K.cast(best_iou<ignore_thresh, true_box.dtype))
             return b+1, ignore_mask
         _, ignore_mask = K.control_flow_ops.while_loop(lambda b,*args: b<m, loop_body, [0, ignore_mask])
-        ignore_mask = ignore_masK.stack()
+        ignore_mask = ignore_mask.stack()
         ignore_mask = K.expand_dims(ignore_mask, -1)
 
         # K.binary_crossentropy is helpful to avoid exp overflow.
