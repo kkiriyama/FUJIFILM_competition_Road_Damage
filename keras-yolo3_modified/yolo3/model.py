@@ -131,14 +131,14 @@ def yolo_head(feats, anchors, num_classes, input_shape, calc_loss=False):
     grid_x = tf.tile(tf.reshape(tf.arange(0, stop=grid_shape[1]), [1, -1, 1, 1]),
         [grid_shape[0], 1, 1, 1])
     grid = tf.concatenate([grid_x, grid_y])
-    grid = tf.cast(grid, tf.dtype(feats))
+    grid = tf.cast(grid, feats.dtype)
 
     feats = tf.reshape(
         feats, [-1, grid_shape[0], grid_shape[1], num_anchors, num_classes + 5])
 
     # Adjust preditions to each spatial grid point and anchor size.
-    box_xy = (tf.sigmoid(feats[..., :2]) + grid) / tf.cast(grid_shape[::-1], tf.dtype(feats))
-    box_wh = tf.exp(feats[..., 2:4]) * anchors_tensor / tf.cast(input_shape[::-1], tf.dtype(feats))
+    box_xy = (tf.sigmoid(feats[..., :2]) + grid) / tf.cast(grid_shape[::-1], feats.dtype)
+    box_wh = tf.exp(feats[..., 2:4]) * anchors_tensor / tf.cast(input_shape[::-1], feats.dtype)
     box_confidence = tf.sigmoid(feats[..., 4:5])
     box_class_probs = tf.sigmoid(feats[..., 5:])
 
@@ -151,8 +151,8 @@ def yolo_correct_boxes(box_xy, box_wh, input_shape, image_shape):
     '''Get corrected boxes'''
     box_yx = box_xy[..., ::-1]
     box_hw = box_wh[..., ::-1]
-    input_shape = tf.cast(input_shape, tf.dtype(box_yx))
-    image_shape = tf.cast(image_shape, tf.dtype(box_yx))
+    input_shape = tf.cast(input_shape, box_yx.dtype)
+    image_shape = tf.cast(image_shape, box_yx.dtype)
     new_shape = tf.round(image_shape * tf.min(input_shape/image_shape))
     offset = (input_shape-new_shape)/2./input_shape
     scale = input_shape/new_shape
@@ -362,11 +362,11 @@ def yolo_loss(args, anchors, num_classes, ignore_thresh=.5, print_loss=False):
     yolo_outputs = args[:num_layers]
     y_true = args[num_layers:]
     anchor_mask = [[6,7,8], [3,4,5], [0,1,2]] if num_layers==3 else [[3,4,5], [1,2,3]]
-    input_shape = tf.cast(tf.shape(yolo_outputs[0])[1:3] * 32, tf.dtype(y_true[0]))
-    grid_shapes = [tf.cast(tf.shape(yolo_outputs[l])[1:3], tf.dtype(y_true[0])) for l in range(num_layers)]
+    input_shape = tf.cast(tf.shape(yolo_outputs[0])[1:3] * 32, y_true[0].dtype)
+    grid_shapes = [tf.cast(tf.shape(yolo_outputs[l])[1:3], y_true[0].dtype) for l in range(num_layers)]
     loss = 0
     m = tf.shape(yolo_outputs[0])[0] # batch size, tensor
-    mf = tf.cast(m, tf.dtype(yolo_outputs[0]))
+    mf = tf.cast(m, yolo_outputs[0].dtype)
 
     for l in range(num_layers):
         object_mask = y_true[l][..., 4:5]
@@ -384,13 +384,13 @@ def yolo_loss(args, anchors, num_classes, ignore_thresh=.5, print_loss=False):
         box_loss_scale = 2 - y_true[l][...,2:3]*y_true[l][...,3:4]
 
         # Find ignore mask, iterate over each of batch.
-        ignore_mask = tf.TensorArray(tf.dtype(y_true[0]), size=1, dynamic_size=True)
+        ignore_mask = tf.TensorArray(y_true[0].dtype, size=1, dynamic_size=True)
         object_mask_bool = tf.cast(object_mask, 'bool')
         def loop_body(b, ignore_mask):
             true_box = tf.boolean_mask(y_true[l][b,...,0:4], object_mask_bool[b,...,0])
             iou = box_iou(pred_box[b], true_box)
             best_iou = tf.max(iou, axis=-1)
-            ignore_mask = ignore_mastf.write(b, tf.cast(best_iou<ignore_thresh, tf.dtype(true_box)))
+            ignore_mask = ignore_mastf.write(b, tf.cast(best_iou<ignore_thresh, true_box.dtype))
             return b+1, ignore_mask
         _, ignore_mask = tf.control_flow_ops.while_loop(lambda b,*args: b<m, loop_body, [0, ignore_mask])
         ignore_mask = ignore_mastf.stack()
