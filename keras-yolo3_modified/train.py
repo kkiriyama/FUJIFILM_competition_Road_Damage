@@ -46,7 +46,7 @@ def _main():
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=3, verbose=1)
     early_stopping = EarlyStopping(monitor='val_loss', min_delta=0, patience=10, verbose=1)
 
-    split = [0.4, 0.6]
+    split = [0.5, 0.6]
     with open(annotation_path) as f:
         lines = f.readlines()
     np.random.seed(10101)
@@ -82,7 +82,7 @@ def _main():
             for k in range(len(model.layers)):
                 model.layers[k].trainable = True
             model.compile(
-                optimizer=tf.train.AdamOptimizer(learning_rate=1e-3),
+                optimizer=Adam(learning_rate=1e-3),
                 loss={'yolo_loss': lambda y_true, y_pred: y_pred}
                 ) # recompile to apply the change
             
