@@ -82,7 +82,7 @@ def _main():
             for k in range(len(model.layers)):
                 model.layers[k].trainable = True
             model.compile(
-                optimizer=Adam(learning_rate=1e-3),
+                optimizer=Adam(lr=1e-3),
                 loss={'yolo_loss': lambda y_true, y_pred: y_pred}
                 ) # recompile to apply the change
             
