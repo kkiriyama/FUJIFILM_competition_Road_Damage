@@ -212,8 +212,8 @@ def yolo_eval(yolo_outputs,
     classes_ = []
     for c in range(num_classes):
         # TODO: use keras backend instead of K.
-        class_boxes = K.boolean_mask(boxes, mask[:, c])
-        class_box_scores = K.boolean_mask(box_scores[:, c], mask[:, c])
+        class_boxes = tf.boolean_mask(boxes, mask[:, c])
+        class_box_scores = tf.boolean_mask(box_scores[:, c], mask[:, c])
         nms_index = K.image.non_max_suppression(
             class_boxes, class_box_scores, max_boxes_tensor, iou_threshold=iou_threshold)
         class_boxes = K.gather(class_boxes, nms_index)
@@ -387,7 +387,7 @@ def yolo_loss(args, anchors, num_classes, ignore_thresh=.5, print_loss=False):
         ignore_mask = tf.TensorArray(y_true[0].dtype, size=1, dynamic_size=True)
         object_mask_bool = K.cast(object_mask, 'bool')
         def loop_body(b, ignore_mask):
-            true_box = K.boolean_mask(y_true[l][b,...,0:4], object_mask_bool[b,...,0])
+            true_box = tf.boolean_mask(y_true[l][b,...,0:4], object_mask_bool[b,...,0])
             iou = box_iou(pred_box[b], true_box)
             best_iou = K.max(iou, axis=-1)
             ignore_mask = ignore_masK.write(b, K.cast(best_iou<ignore_thresh, true_box.dtype))
