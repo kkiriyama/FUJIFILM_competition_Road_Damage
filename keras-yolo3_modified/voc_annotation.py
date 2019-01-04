@@ -30,7 +30,7 @@ def convert_annotation(location_n, image_id, list_file):
 
 wd = getcwd()
 
-list_file = open('train_tiny.txt', 'w')
+list_file = open('train-correct.txt', 'w')
 for location_n in sets:
     print(location_n)   
     image_ids = os.listdir('./train/location%d/images'%(location_n))
