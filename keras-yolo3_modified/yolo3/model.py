@@ -130,7 +130,7 @@ def yolo_head(feats, anchors, num_classes, input_shape, calc_loss=False):
         [1, grid_shape[1], 1, 1])
     grid_x = tf.tile(tf.reshape(K.arange(0, stop=grid_shape[1]), [1, -1, 1, 1]),
         [grid_shape[0], 1, 1, 1])
-    grid = tf.concatenate([grid_x, grid_y])
+    grid = K.concatenate([grid_x, grid_y])
     grid = tf.cast(grid, feats.dtype)
 
     feats = tf.reshape(
@@ -161,7 +161,7 @@ def yolo_correct_boxes(box_xy, box_wh, input_shape, image_shape):
 
     box_mins = box_yx - (box_hw / 2.)
     box_maxes = box_yx + (box_hw / 2.)
-    boxes =  tf.concatenate([
+    boxes =  K.concatenate([
         box_mins[..., 0:1],  # y_min
         box_mins[..., 1:2],  # x_min
         box_maxes[..., 0:1],  # y_max
@@ -169,7 +169,7 @@ def yolo_correct_boxes(box_xy, box_wh, input_shape, image_shape):
     ])
 
     # Scale boxes back to original image shape.
-    boxes *= tf.concatenate([image_shape, image_shape])
+    boxes *= K.concatenate([image_shape, image_shape])
     return boxes
 
 
@@ -202,8 +202,8 @@ def yolo_eval(yolo_outputs,
             anchors[anchor_mask[l]], num_classes, input_shape, image_shape)
         boxes.append(_boxes)
         box_scores.append(_box_scores)
-    boxes = tf.concatenate(boxes, axis=0)
-    box_scores = tf.concatenate(box_scores, axis=0)
+    boxes = K.concatenate(boxes, axis=0)
+    box_scores = K.concatenate(box_scores, axis=0)
 
     mask = box_scores >= score_threshold
     max_boxes_tensor = tf.constant(max_boxes, dtype='int32')
@@ -222,9 +222,9 @@ def yolo_eval(yolo_outputs,
         boxes_.append(class_boxes)
         scores_.append(class_box_scores)
         classes_.append(classes)
-    boxes_ = tf.concatenate(boxes_, axis=0)
-    scores_ = tf.concatenate(scores_, axis=0)
-    classes_ = tf.concatenate(classes_, axis=0)
+    boxes_ = K.concatenate(boxes_, axis=0)
+    scores_ = K.concatenate(scores_, axis=0)
+    classes_ = K.concatenate(classes_, axis=0)
 
     return boxes_, scores_, classes_
 
@@ -375,7 +375,7 @@ def yolo_loss(args, anchors, num_classes, ignore_thresh=.5, print_loss=False):
 
         grid, raw_pred, pred_xy, pred_wh = yolo_head(yolo_outputs[l],
              anchors[anchor_mask[l]], num_classes, input_shape, calc_loss=True)
-        pred_box = tf.concatenate([pred_xy, pred_wh])
+        pred_box = K.concatenate([pred_xy, pred_wh])
 
         # Darknet raw box to calculate loss.
         raw_true_xy = y_true[l][..., :2]*grid_shapes[l][::-1] - grid
