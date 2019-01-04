@@ -123,24 +123,24 @@ def yolo_head(feats, anchors, num_classes, input_shape, calc_loss=False):
     """Convert final layer features to bounding box parameters."""
     num_anchors = len(anchors)
     # Reshape to batch, height, width, num_anchors, box_params.
-    anchors_tensor = tf.reshape(tf.constant(anchors), [1, 1, 1, num_anchors, 2])
+    anchors_tensor = K.reshape(K.constant(anchors), [1, 1, 1, num_anchors, 2])
 
-    grid_shape = tf.shape(feats)[1:3] # height, width
-    grid_y = tf.tile(tf.reshape(K.arange(0, stop=grid_shape[0]), [-1, 1, 1, 1]),
+    grid_shape = K.shape(feats)[1:3] # height, width
+    grid_y = K.tile(K.reshape(K.arange(0, stop=grid_shape[0]), [-1, 1, 1, 1]),
         [1, grid_shape[1], 1, 1])
-    grid_x = tf.tile(tf.reshape(K.arange(0, stop=grid_shape[1]), [1, -1, 1, 1]),
+    grid_x = K.tile(K.reshape(K.arange(0, stop=grid_shape[1]), [1, -1, 1, 1]),
         [grid_shape[0], 1, 1, 1])
     grid = K.concatenate([grid_x, grid_y])
-    grid = tf.cast(grid, feats.dtype)
+    grid = K.cast(grid, feats.dtype)
 
-    feats = tf.reshape(
+    feats = K.reshape(
         feats, [-1, grid_shape[0], grid_shape[1], num_anchors, num_classes + 5])
 
     # Adjust preditions to each spatial grid point and anchor size.
-    box_xy = (tf.sigmoid(feats[..., :2]) + grid) / tf.cast(grid_shape[::-1], feats.dtype)
-    box_wh = tf.exp(feats[..., 2:4]) * anchors_tensor / tf.cast(input_shape[::-1], feats.dtype)
-    box_confidence = tf.sigmoid(feats[..., 4:5])
-    box_class_probs = tf.sigmoid(feats[..., 5:])
+    box_xy = (K.sigmoid(feats[..., :2]) + grid) / K.cast(grid_shape[::-1], feats.dtype)
+    box_wh = K.exp(feats[..., 2:4]) * anchors_tensor / K.cast(input_shape[::-1], feats.dtype)
+    box_confidence = K.sigmoid(feats[..., 4:5])
+    box_class_probs = K.sigmoid(feats[..., 5:])
 
     if calc_loss == True:
         return grid, feats, box_xy, box_wh
@@ -151,9 +151,9 @@ def yolo_correct_boxes(box_xy, box_wh, input_shape, image_shape):
     '''Get corrected boxes'''
     box_yx = box_xy[..., ::-1]
     box_hw = box_wh[..., ::-1]
-    input_shape = tf.cast(input_shape, box_yx.dtype)
-    image_shape = tf.cast(image_shape, box_yx.dtype)
-    new_shape = tf.round(image_shape * tf.min(input_shape/image_shape))
+    input_shape = K.cast(input_shape, box_yx.dtype)
+    image_shape = K.cast(image_shape, box_yx.dtype)
+    new_shape = K.round(image_shape * K.min(input_shape/image_shape))
     offset = (input_shape-new_shape)/2./input_shape
     scale = input_shape/new_shape
     box_yx = (box_yx - offset) * scale
@@ -178,9 +178,9 @@ def yolo_boxes_and_scores(feats, anchors, num_classes, input_shape, image_shape)
     box_xy, box_wh, box_confidence, box_class_probs = yolo_head(feats,
         anchors, num_classes, input_shape)
     boxes = yolo_correct_boxes(box_xy, box_wh, input_shape, image_shape)
-    boxes = tf.reshape(boxes, [-1, 4])
+    boxes = K.reshape(boxes, [-1, 4])
     box_scores = box_confidence * box_class_probs
-    box_scores = tf.reshape(box_scores, [-1, num_classes])
+    box_scores = K.reshape(box_scores, [-1, num_classes])
     return boxes, box_scores
 
 
@@ -194,7 +194,7 @@ def yolo_eval(yolo_outputs,
     """Evaluate YOLO model on given input and return filtered boxes."""
     num_layers = len(yolo_outputs)
     anchor_mask = [[6,7,8], [3,4,5], [0,1,2]] if num_layers==3 else [[3,4,5], [1,2,3]] # default setting
-    input_shape = tf.shape(yolo_outputs[0])[1:3] * 32
+    input_shape = K.shape(yolo_outputs[0])[1:3] * 32
     boxes = []
     box_scores = []
     for l in range(num_layers):
@@ -206,19 +206,19 @@ def yolo_eval(yolo_outputs,
     box_scores = K.concatenate(box_scores, axis=0)
 
     mask = box_scores >= score_threshold
-    max_boxes_tensor = tf.constant(max_boxes, dtype='int32')
+    max_boxes_tensor = K.constant(max_boxes, dtype='int32')
     boxes_ = []
     scores_ = []
     classes_ = []
     for c in range(num_classes):
-        # TODO: use keras backend instead of tf.
-        class_boxes = tf.boolean_mask(boxes, mask[:, c])
-        class_box_scores = tf.boolean_mask(box_scores[:, c], mask[:, c])
-        nms_index = tf.image.non_max_suppression(
+        # TODO: use keras backend instead of K.
+        class_boxes = K.boolean_mask(boxes, mask[:, c])
+        class_box_scores = K.boolean_mask(box_scores[:, c], mask[:, c])
+        nms_index = K.image.non_max_suppression(
             class_boxes, class_box_scores, max_boxes_tensor, iou_threshold=iou_threshold)
-        class_boxes = tf.gather(class_boxes, nms_index)
-        class_box_scores = tf.gather(class_box_scores, nms_index)
-        classes = tf.ones_like(class_box_scores, 'int32') * c
+        class_boxes = K.gather(class_boxes, nms_index)
+        class_box_scores = K.gather(class_box_scores, nms_index)
+        classes = K.ones_like(class_box_scores, 'int32') * c
         boxes_.append(class_boxes)
         scores_.append(class_box_scores)
         classes_.append(classes)
@@ -316,7 +316,7 @@ def box_iou(b1, b2):
     '''
 
     # Expand dim to apply broadcasting.
-    b1 = tf.expand_dims(b1, -2)
+    b1 = K.expand_dims(b1, -2)
     b1_xy = b1[..., :2]
     b1_wh = b1[..., 2:4]
     b1_wh_half = b1_wh/2.
@@ -324,16 +324,16 @@ def box_iou(b1, b2):
     b1_maxes = b1_xy + b1_wh_half
 
     # Expand dim to apply broadcasting.
-    b2 = tf.expand_dims(b2, 0)
+    b2 = K.expand_dims(b2, 0)
     b2_xy = b2[..., :2]
     b2_wh = b2[..., 2:4]
     b2_wh_half = b2_wh/2.
     b2_mins = b2_xy - b2_wh_half
     b2_maxes = b2_xy + b2_wh_half
 
-    intersect_mins = tf.maximum(b1_mins, b2_mins)
-    intersect_maxes = tf.minimum(b1_maxes, b2_maxes)
-    intersect_wh = tf.maximum(intersect_maxes - intersect_mins, 0.)
+    intersect_mins = K.maximum(b1_mins, b2_mins)
+    intersect_maxes = K.minimum(b1_maxes, b2_maxes)
+    intersect_wh = K.maximum(intersect_maxes - intersect_mins, 0.)
     intersect_area = intersect_wh[..., 0] * intersect_wh[..., 1]
     b1_area = b1_wh[..., 0] * b1_wh[..., 1]
     b2_area = b2_wh[..., 0] * b2_wh[..., 1]
@@ -362,11 +362,11 @@ def yolo_loss(args, anchors, num_classes, ignore_thresh=.5, print_loss=False):
     yolo_outputs = args[:num_layers]
     y_true = args[num_layers:]
     anchor_mask = [[6,7,8], [3,4,5], [0,1,2]] if num_layers==3 else [[3,4,5], [1,2,3]]
-    input_shape = tf.cast(tf.shape(yolo_outputs[0])[1:3] * 32, y_true[0].dtype)
-    grid_shapes = [tf.cast(tf.shape(yolo_outputs[l])[1:3], y_true[0].dtype) for l in range(num_layers)]
+    input_shape = K.cast(K.shape(yolo_outputs[0])[1:3] * 32, y_true[0].dtype)
+    grid_shapes = [K.cast(K.shape(yolo_outputs[l])[1:3], y_true[0].dtype) for l in range(num_layers)]
     loss = 0
-    m = tf.shape(yolo_outputs[0])[0] # batch size, tensor
-    mf = tf.cast(m, yolo_outputs[0].dtype)
+    m = K.shape(yolo_outputs[0])[0] # batch size, tensor
+    mf = K.cast(m, yolo_outputs[0].dtype)
 
     for l in range(num_layers):
         object_mask = y_true[l][..., 4:5]
@@ -379,35 +379,35 @@ def yolo_loss(args, anchors, num_classes, ignore_thresh=.5, print_loss=False):
 
         # Darknet raw box to calculate loss.
         raw_true_xy = y_true[l][..., :2]*grid_shapes[l][::-1] - grid
-        raw_true_wh = tf.log(y_true[l][..., 2:4] / anchors[anchor_mask[l]] * input_shape[::-1])
-        raw_true_wh = tf.switch(object_mask, raw_true_wh, tf.zeros_like(raw_true_wh)) # avoid log(0)=-inf
+        raw_true_wh = K.log(y_true[l][..., 2:4] / anchors[anchor_mask[l]] * input_shape[::-1])
+        raw_true_wh = K.switch(object_mask, raw_true_wh, K.zeros_like(raw_true_wh)) # avoid log(0)=-inf
         box_loss_scale = 2 - y_true[l][...,2:3]*y_true[l][...,3:4]
 
         # Find ignore mask, iterate over each of batch.
-        ignore_mask = tf.TensorArray(y_true[0].dtype, size=1, dynamic_size=True)
-        object_mask_bool = tf.cast(object_mask, 'bool')
+        ignore_mask = K.TensorArray(y_true[0].dtype, size=1, dynamic_size=True)
+        object_mask_bool = K.cast(object_mask, 'bool')
         def loop_body(b, ignore_mask):
-            true_box = tf.boolean_mask(y_true[l][b,...,0:4], object_mask_bool[b,...,0])
+            true_box = K.boolean_mask(y_true[l][b,...,0:4], object_mask_bool[b,...,0])
             iou = box_iou(pred_box[b], true_box)
-            best_iou = tf.max(iou, axis=-1)
-            ignore_mask = ignore_mastf.write(b, tf.cast(best_iou<ignore_thresh, true_box.dtype))
+            best_iou = K.max(iou, axis=-1)
+            ignore_mask = ignore_masK.write(b, K.cast(best_iou<ignore_thresh, true_box.dtype))
             return b+1, ignore_mask
-        _, ignore_mask = tf.control_flow_ops.while_loop(lambda b,*args: b<m, loop_body, [0, ignore_mask])
-        ignore_mask = ignore_mastf.stack()
-        ignore_mask = tf.expand_dims(ignore_mask, -1)
+        _, ignore_mask = K.control_flow_ops.while_loop(lambda b,*args: b<m, loop_body, [0, ignore_mask])
+        ignore_mask = ignore_masK.stack()
+        ignore_mask = K.expand_dims(ignore_mask, -1)
 
-        # tf.binary_crossentropy is helpful to avoid exp overflow.
-        xy_loss = object_mask * box_loss_scale * tf.binary_crossentropy(raw_true_xy, raw_pred[...,0:2], from_logits=True)
-        wh_loss = object_mask * box_loss_scale * 0.5 * tf.square(raw_true_wh-raw_pred[...,2:4])
-        confidence_loss = object_mask * tf.binary_crossentropy(object_mask, raw_pred[...,4:5], from_logits=True)+ \
-            (1-object_mask) * tf.binary_crossentropy(object_mask, raw_pred[...,4:5], from_logits=True) * ignore_mask
-        class_loss = object_mask * tf.binary_crossentropy(true_class_probs, raw_pred[...,5:], from_logits=True)
+        # K.binary_crossentropy is helpful to avoid exp overflow.
+        xy_loss = object_mask * box_loss_scale * K.binary_crossentropy(raw_true_xy, raw_pred[...,0:2], from_logits=True)
+        wh_loss = object_mask * box_loss_scale * 0.5 * K.square(raw_true_wh-raw_pred[...,2:4])
+        confidence_loss = object_mask * K.binary_crossentropy(object_mask, raw_pred[...,4:5], from_logits=True)+ \
+            (1-object_mask) * K.binary_crossentropy(object_mask, raw_pred[...,4:5], from_logits=True) * ignore_mask
+        class_loss = object_mask * K.binary_crossentropy(true_class_probs, raw_pred[...,5:], from_logits=True)
 
-        xy_loss = tf.sum(xy_loss) / mf
-        wh_loss = tf.sum(wh_loss) / mf
-        confidence_loss = tf.sum(confidence_loss) / mf
-        class_loss = tf.sum(class_loss) / mf
+        xy_loss = K.sum(xy_loss) / mf
+        wh_loss = K.sum(wh_loss) / mf
+        confidence_loss = K.sum(confidence_loss) / mf
+        class_loss = K.sum(class_loss) / mf
         loss += xy_loss + wh_loss + confidence_loss + class_loss
         if print_loss:
-            loss = tf.Print(loss, [loss, xy_loss, wh_loss, confidence_loss, class_loss, tf.sum(ignore_mask)], message='loss: ')
+            loss = K.Print(loss, [loss, xy_loss, wh_loss, confidence_loss, class_loss, K.sum(ignore_mask)], message='loss: ')
     return loss
