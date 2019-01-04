@@ -17,7 +17,7 @@ import os
 
 
 def _main():
-    annotation_path = './train_scaled.txt'
+    annotation_path = './train_tiny.txt'
     log_dir = './logs/001/'
     classes_path = './model_data/voc_classes.txt'
     anchors_path = './model_data/tiny_yolo_anchors.txt'
