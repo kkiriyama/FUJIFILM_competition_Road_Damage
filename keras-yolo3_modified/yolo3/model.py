@@ -384,7 +384,7 @@ def yolo_loss(args, anchors, num_classes, ignore_thresh=.5, print_loss=False):
         box_loss_scale = 2 - y_true[l][...,2:3]*y_true[l][...,3:4]
 
         # Find ignore mask, iterate over each of batch.
-        ignore_mask = K.TensorArray(y_true[0].dtype, size=1, dynamic_size=True)
+        ignore_mask = tf.tensorArray(y_true[0].dtype, size=1, dynamic_size=True)
         object_mask_bool = K.cast(object_mask, 'bool')
         def loop_body(b, ignore_mask):
             true_box = K.boolean_mask(y_true[l][b,...,0:4], object_mask_bool[b,...,0])
