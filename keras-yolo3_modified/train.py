@@ -87,11 +87,6 @@ def _main():
                 loss={'yolo_loss': lambda y_true, y_pred: y_pred}
                 ) # recompile to apply the change
             
-            tpu_grpc_url = "grpc://"+os.environ["COLAB_TPU_ADDR"]
-            tpu_cluster_resolver = tf.contrib.cluster_resolver.TPUClusterResolver(tpu_grpc_url)
-            strategy = keras_support.TPUDistributionStrategy(tpu_cluster_resolver)
-            model = tf.contrib.tpu.keras_to_tpu_model(model, strategy=strategy)
-
             print('Unfreeze all of the layers.')
 
             batch_size = 8 # note that more GPU memory is required after unfreezing the body
@@ -123,7 +118,7 @@ def get_anchors(anchors_path):
     return np.array(anchors).reshape(-1, 2)
 
 
-def create_model(input_shape, anchors, num_classes, load_pretrained=False, freeze_body=2,
+def create_model(input_shape, anchors, num_classes, load_pretrained=True, freeze_body=2,
             weights_path='model_data/yolo_weights.h5'):
     '''create the training model'''
     K.clear_session() # get a new session
@@ -157,7 +152,7 @@ def create_model(input_shape, anchors, num_classes, load_pretrained=False, freez
 
     return model
 
-def create_tiny_model(input_shape, anchors, num_classes, load_pretrained=False, freeze_body=2,
+def create_tiny_model(input_shape, anchors, num_classes, load_pretrained=True, freeze_body=2,
             weights_path='model_data/tiny_yolo_weights.h5'):
     '''create the training model, for Tiny YOLOv3'''
     K.clear_session() # get a new session
@@ -174,7 +169,8 @@ def create_tiny_model(input_shape, anchors, num_classes, load_pretrained=False, 
     if load_pretrained:
         model_body.load_weights(
             weights_path,
-            by_name=True
+            by_name=True,
+            skip_mismatch=True
         )
         print('Load weights {}.'.format(weights_path))
         if freeze_body in [1, 2]:
