@@ -10,5 +10,5 @@ for i in range(1, 8):
   files = os.listdir(PATH)
   for f in tqdm(files):
     img = Image.open(os.path.join(PATH, f))
-    img_resize = img.resize((416, 416))
+    img_resize = img.resize((384, 384))
     img_resize.save(f)
