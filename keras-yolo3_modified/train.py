@@ -20,7 +20,7 @@ def _main():
     annotation_path = './train-correct.txt'
     log_dir = './logs/001/'
     classes_path = './model_data/voc_classes.txt'
-    anchors_path = './model_data/tiny_yolo_anchors.txt'
+    anchors_path = './model_data/yolo_anchors.txt'
     class_names = get_classes(classes_path)
     num_classes = len(class_names)
     anchors = get_anchors(anchors_path)
@@ -49,6 +49,7 @@ def _main():
     split = [0.5, 0.6]
     with open(annotation_path) as f:
         lines = f.readlines()
+    lines.map(lambda x: x.replace('train', 'train_preprocessed'))
     np.random.seed(10101)
     np.random.shuffle(lines)
     np.random.seed(None)
