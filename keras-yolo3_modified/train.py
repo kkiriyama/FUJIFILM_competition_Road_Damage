@@ -49,7 +49,7 @@ def _main():
     split = [0.5, 0.6]
     with open(annotation_path) as f:
         lines = f.readlines()
-    lines.map(lambda x: x.replace('train', 'train_preprocessed'))
+    lines = list(map(lambda x: x.replace('train', 'train_preprocessed'), lines))
     np.random.seed(10101)
     np.random.shuffle(lines)
     np.random.seed(None)
