@@ -75,7 +75,7 @@ def _main():
                     epochs=10,
                     initial_epoch=0,
                     callbacks=[logging, checkpoint])
-            model.save_weights(log_dir + 'trained_weights_stage_1_%d.h5'%(i))
+            model.save_weights(log_dir + 'preprocessed_stage_1_%d.h5'%(i))
 
         # Unfreeze and continue training, to fine-tune.
         # Train longer if the result is not good.
@@ -98,7 +98,7 @@ def _main():
                 epochs=20,
                 initial_epoch=10,
                 callbacks=[logging, checkpoint, reduce_lr, early_stopping])
-            model.save(log_dir + 'trained_weights_final_%d.h5'%(i))
+            model.save(log_dir + 'preprocessed_final_%d.h5'%(i))
 
         # Further training if needed.
 
