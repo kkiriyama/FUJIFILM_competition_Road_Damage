@@ -300,10 +300,10 @@ if __name__ == '__main__':
         f.close()
     """
 
-    FLAGS.model = './trained_weights_final_0.h5'
+    FLAGS.model = './preprocessed_final_0.h5'
     output_list = detect_img(YOLO(**vars(FLAGS)))
     xml = generate_xml(output_list)
-    f = open('YOLO_answer_5fold_CV.xml', 'w')
+    f = open('YOLO_answer_preprocessed.xml', 'w')
     f.write(xml)
     f.close()
 
