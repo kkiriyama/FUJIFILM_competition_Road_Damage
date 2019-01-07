@@ -9,7 +9,6 @@ import cv2 as cv
 
 from tqdm import tqdm
 
-from skopt import gp_minimize
 
 def calc_score(yolo):
     split = [0.4, 0.6]
