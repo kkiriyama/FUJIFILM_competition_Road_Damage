@@ -46,16 +46,15 @@ def _main():
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=3, verbose=1)
     early_stopping = EarlyStopping(monitor='val_loss', min_delta=0, patience=10, verbose=1)
 
-    split = [0.5, 0.6]
+    split = [0, 0.2, 0.4, 0.6, 0.8, 1]
     with open(annotation_path) as f:
         lines = f.readlines()
-    lines = list(map(lambda x: x.replace('train', 'train_preprocessed'), lines))
     np.random.seed(10101)
     np.random.shuffle(lines)
     np.random.seed(None)
     lines = np.array(lines)
 
-    for i in range(1):
+    for i in range(5):
         train_split_data = np.split(lines, [int(len(lines) * split[i]), int(len(lines) * split[i + 1])])
         train_data = np.hstack((train_split_data[0], train_split_data[2]))
         val_data = lines[int(len(lines) * split[i]) : int(len(lines) * split[i + 1])]
@@ -66,16 +65,16 @@ def _main():
                 # use custom yolo_loss Lambda layer.
                 'yolo_loss': lambda y_true, y_pred: y_pred})
 
-            batch_size = 32
-            print('Train on {} samples, val on {} samples, with batch size {}.'.format(int(len(lines) * 0.9), int(len(lines) * 0.1), batch_size))
+            batch_size = 8
+            print('Train on {} samples, val on {} samples, with batch size {}.'.format(int(len(lines) * 0.8), int(len(lines) * 0.2), batch_size))
             model.fit_generator(data_generator_wrapper(train_data, batch_size, input_shape, anchors, num_classes),
                     steps_per_epoch=max(1, int(len(lines) * 0.8)//batch_size),
                     validation_data=data_generator_wrapper(val_data, batch_size, input_shape, anchors, num_classes),
                     validation_steps=max(1, int(len(lines) * 0.2)//batch_size),
-                    epochs=10,
+                    epochs=20,
                     initial_epoch=0,
                     callbacks=[logging, checkpoint])
-            model.save_weights(log_dir + 'preprocessed_stage_1_%d.h5'%(i))
+            model.save_weights(log_dir + 'CV_stage_1_%d.h5'%(i))
 
         # Unfreeze and continue training, to fine-tune.
         # Train longer if the result is not good.
@@ -89,16 +88,16 @@ def _main():
             
             print('Unfreeze all of the layers.')
 
-            batch_size = 8 # note that more GPU memory is required after unfreezing the body
-            print('Train on {} samples, val on {} samples, with batch size {}.'.format(int(len(lines) * 0.9), int(len(lines) * 0.1), batch_size))
+            batch_size = 2 # note that more GPU memory is required after unfreezing the body
+            print('Train on {} samples, val on {} samples, with batch size {}.'.format(int(len(lines) * 0.8), int(len(lines) * 0.2), batch_size))
             model.fit_generator(data_generator_wrapper(train_data, batch_size, input_shape, anchors, num_classes),
                 steps_per_epoch=max(1, int(len(lines) * 0.8)//batch_size),
                 validation_data=data_generator_wrapper(val_data, batch_size, input_shape, anchors, num_classes),
                 validation_steps=max(1, int(len(lines) * 0.2)//batch_size),
-                epochs=20,
-                initial_epoch=10,
+                epochs=40,
+                initial_epoch=20,
                 callbacks=[logging, checkpoint, reduce_lr, early_stopping])
-            model.save(log_dir + 'preprocessed_final_%d.h5'%(i))
+            model.save(log_dir + 'CV_final_%d.h5'%(i))
 
         # Further training if needed.
 
