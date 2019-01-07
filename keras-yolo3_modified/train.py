@@ -18,7 +18,7 @@ import os
 
 def _main():
     annotation_path = './train-correct.txt'
-    log_dir = './logs/001/'
+    log_dir = './logs/002/'
     classes_path = './model_data/voc_classes.txt'
     anchors_path = './model_data/yolo_anchors.txt'
     class_names = get_classes(classes_path)
