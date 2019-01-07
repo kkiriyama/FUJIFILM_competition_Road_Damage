@@ -299,7 +299,7 @@ if __name__ == '__main__':
         f.close()
     """
 
-    FLAGS.model = './preprocessed_final_0.h5'
+    FLAGS.model_path = './preprocessed_final_0.h5'
     output_list = detect_img(YOLO(**vars(FLAGS)))
     xml = generate_xml(output_list)
     f = open('YOLO_answer_preprocessed.xml', 'w')
