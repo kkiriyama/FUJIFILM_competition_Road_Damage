@@ -3,9 +3,11 @@ import os
 import argparse
 from yolo import YOLO, detect_video
 from PIL import Image
-import xml.dom.minidom
+from xml.dom import minidom
 import numpy as np
 import cv2 as cv
+import tensorflow as tf
+from natsort import natsorted
 
 from tqdm import tqdm
 
@@ -93,17 +95,17 @@ def scaling_box(box, scale):
         s_ymax = 600
     prev_area = (xmax - xmin) * (ymax - ymin)
     post_area = (s_xmax - s_xmin) * (s_ymax - s_ymin)
-    print(post_area/prev_area)
     return [s_xmin, s_ymin, s_xmax, s_ymax]
 
 def detect_img(yolo):
-    img_list = os.listdir('./test')
+    img_list = os.listdir('../../test')
+    img_llist = natsorted(img_list)
     output_list = []
     for img in tqdm(img_list):
         img_name_withext = os.path.basename(img)
         img_name = os.path.splitext(img_name_withext)[0]
         try:
-            image = Image.open('./test/' + img)
+            image = Image.open('../../test/' + img)
         except:
             print('Open Error! Try again!')
             continue
@@ -128,12 +130,12 @@ def detect_img(yolo):
                     else:
                         new_b_box_list.append(b_box_list[i])
             assert len(n_cls_list) == len(new_b_box_list)
-            output_list.append([img_name_withext, n_cls_list, new_b_box_list])
-    yolo.close_session()
+            output_list.append([img_name_withext, n_cls_list, new_b_box_list, score_list])
+    # yolo.close_session()
     return output_list
 
 def generate_xml(output_list):
-    dom = xml.dom.minidom.Document()
+    dom = minidom.Document()
 
     root = dom.createElement('annotations')
     dom.appendChild(root)
@@ -237,59 +239,72 @@ if __name__ == '__main__':
     Image detection mode, disregard any remaining command line arguments
     """
     print("Image detection mode")
-    """
+
     if FLAGS.use_CV:
         rets = []
-        for i in range(1):
-            FLAGS.model = '../logs/000/trained_weights_final_%d.h5'%(i)
+        for i in range(0, 5):
+            FLAGS.model_path = './YOLO_5CV/CV_final_%d.h5'%(i)
+            FLAGS.anchors = 'model_data/yolo_anchors.txt'
             output_list = detect_img(YOLO(**vars(FLAGS)))
+
             rets.append(output_list)
 
+        CV_output_list = []
 
-        dom = xml.dom.minidom.Document()
-        root = dom.createElement('annotations')
-        dom.appendChild(root)
+        for j in tqdm(range(len(rets[0]))):
+            filename = rets[0][j][0]
+            class_list = []
+            box_list = []
+            score_list = []
+            for i in range(0, 5):
+                class_list.extend(rets[i][j][1])
+                box_list.extend(rets[i][j][2])
+                score_list.extend(rets[i][j][3])
+            
+            box_list = np.array(box_list)
+            score_list = np.array(score_list)
 
-        for i in range(len(rets[0])):
-            annotation = dom.createElement('annotation')
-            filename = dom.createElement('filename')
-            annotation.appendChild(filename)
-            for j in range(1, 9):
-                img = np.zeros((600, 600))
-                for k in range(5):
-                    for m in range(rets[k][i][1]):
-                        if (int(rets[k][i][1][m]) - 1 == j):
-                            img[rets[k][i][2][m][0]:rets[k][i][2][m][2], rets[k][i][2][m][1]:rets[k][i][2][m][3]] += 1
-                img[img < 3] = 0
-                img[img >= 3] = 100
-                dst, contours, hierarchy = cv.findContours(img, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-                for i, contour in enumerate(contours):
-                    if area < 500:
-                        continue
-                    obj = dom.createElement('object')
-                    name = dom.createElement('name')
-                    name.appendChild(dom.createTextNode(str(j - 1)))
-                    area = cv.contourArea(contour)
-                    x,y,w,h = cv.boundingRect(contour)
+            nms_class_list = []
+            nms_box_list = []
 
-                    xmin = dom.createElement('xmin')
-                    xmin.appendChild(dom.createTextNode(str(x)))
-                    obj.appendChild(xmin)
-                    ymin = dom.createElement('ymin')
-                    ymin.appendChild(dom.createTextNode(str(x)))
-                    obj.appendChild(ymin)
-                    xmax = dom.createElement('xmax')
-                    xmax.appendChild(dom.createTextNode(str(x)))
-                    obj.appendChild(xmax)
-                    ymax = dom.createElement('ymax')
-                    ymax.appendChild(dom.createTextNode(str(x)))
-                    obj.appendChild(ymax)
-                    annotation.appendChild(obj)
-            root.appendChild(annotation)
-        
-        f = open('YOLO_answer_3.xml', 'w')
-        f.write(dom.toprettyxml())
+            for c in range(1, 9):
+                index_list = [i for i, _x in enumerate(class_list) if int(_x) - 1 == c]
+                
+                c_box_list = box_list[index_list, :]
+                c_score_list = score_list[index_list]
+
+                c_box_list = np.array(c_box_list)
+
+                c_box_tf_list = c_box_list[:, [1, 0, 3, 2]]
+                c_score_tf_list = np.array(c_score_list)
+
+                box_tf = tf.Variable(c_box_tf_list, dtype = tf.float32)
+                score_tf = tf.Variable(c_score_tf_list, dtype = tf.float32)
+
+                output_indices = tf.image.non_max_suppression(
+                    box_tf,
+                    score_tf,
+                    max_output_size = 10
+                )
+
+                with tf.Session() as sess:
+                    sess.run(tf.global_variables_initializer())
+                    output_indices = sess.run(output_indices)
+
+                output_c_box_list = c_box_list[output_indices]
+
+                for box in output_c_box_list:
+                    nms_box_list.append(box)
+                    nms_class_list.append(c)
+
+            CV_output_list.append([filename, nms_class_list, nms_box_list])
+
+        xml = generate_xml(CV_output_list)
+
+        f = open('YOLO_5fold_CV.xml', 'w')
+        f.write(xml)
         f.close()
+        
     else:
         FLAGS.model = './logs/000/trained_weights_final_0.h5'
         output_list = detect_img(YOLO(**vars(FLAGS)))
@@ -297,25 +312,5 @@ if __name__ == '__main__':
         f = open('YOLO_answer_3.xml', 'w')
         f.write(xml)
         f.close()
-    """
 
-    FLAGS.model_path = './preprocessed_final_0.h5'
-    output_list = detect_img(YOLO(**vars(FLAGS)))
-    xml = generate_xml(output_list)
-    f = open('YOLO_answer_preprocessed.xml', 'w')
-    f.write(xml)
-    f.close()
-
-    """
-    FLAGS.model = './logs/001/trained_weights_final_0.h5'
-    space = [
-        (0.05, 0.15),
-        (0.6, 0.8)
-    ]
-    x0 = [0.1, 0.7]
-    res = gp_minimize(calc_score_wrapper, space, x0 = x0, n_calls = 20)
-    print(-1 * res.fun)
-    print(res.x)
-    """
-    
 
