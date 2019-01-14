@@ -251,6 +251,8 @@ if __name__ == '__main__':
 
         CV_output_list = []
 
+        sess = tf.Session()
+
         for j in tqdm(range(len(rets[0]))):
             filename = rets[0][j][0]
             class_list = []
@@ -287,9 +289,8 @@ if __name__ == '__main__':
                     max_output_size = 10
                 )
 
-                with tf.Session() as sess:
-                    sess.run(tf.global_variables_initializer())
-                    output_indices = sess.run(output_indices)
+                sess.run(tf.global_variables_initializer())
+                output_indices = sess.run(output_indices)
 
                 output_c_box_list = c_box_list[output_indices]
 
@@ -298,6 +299,8 @@ if __name__ == '__main__':
                     nms_class_list.append(c)
 
             CV_output_list.append([filename, nms_class_list, nms_box_list])
+
+        sess.close()
 
         xml = generate_xml(CV_output_list)
 
