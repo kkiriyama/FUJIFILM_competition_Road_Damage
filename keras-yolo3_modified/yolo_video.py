@@ -77,8 +77,8 @@ def calc_area(box):
     return w * h 
 
 def calc_iou(box_a, box_b):
-    a_center = ((box_a[0] + box_a[2]) / 2, (box_a[1], box_a[3]) / 2)
-    b_center = ((box_b[0] + box_b[2]) / 2, (box_b[1], box_b[3]) / 2)
+    a_center = ((box_a[0] + box_a[2]) / 2, (box_a[1]+ box_a[3]) / 2)
+    b_center = ((box_b[0] + box_b[2]) / 2, (box_b[1]+ box_b[3]) / 2)
 
     i_width = (box_a[2] - box_a[0])/2 + (box_b[2] - box_b[0])/2 - np.abs(a_center[0] - b_center[0])
     i_height = (box_a[3] - box_a[1])/2 + (box_b[3] - box_b[1])/2 - np.abs(a_center[1] - b_center[1])
@@ -113,14 +113,14 @@ def scaling_box(box, scale):
     return [s_xmin, s_ymin, s_xmax, s_ymax]
 
 def detect_img(yolo):
-    img_list = os.listdir('../../test')
+    img_list = os.listdir('./test')
     img_llist = natsorted(img_list)
     output_list = []
     for img in tqdm(img_list):
         img_name_withext = os.path.basename(img)
         img_name = os.path.splitext(img_name_withext)[0]
         try:
-            image = Image.open('../../test/' + img)
+            image = Image.open('./test/' + img)
         except:
             print('Open Error! Try again!')
             continue
