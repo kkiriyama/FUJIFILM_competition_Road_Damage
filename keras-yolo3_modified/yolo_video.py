@@ -287,7 +287,7 @@ if __name__ == '__main__':
             for c in range(1, 9):
                 index_list = [i for i, _x in enumerate(class_list) if int(_x) - 1 == c]
                 
-                c_box_list = box_list[index_list, :]
+                c_box_list = box_list[index_list]
                 c_score_list = score_list[index_list]
 
                 idx = np.argsort(c_score_list)
@@ -305,8 +305,8 @@ if __name__ == '__main__':
                             break
 
                         for j in output_indices:
-                            current_box = c_box_list[i, :]                        
-                            compare_box = c_box_list[j, :]
+                            current_box = c_box_list[i]                        
+                            compare_box = c_box_list[j]
                             iou = calc_iou(current_box, compare_box)
                             if iou >= 0.3:
                                 is_suppressed = True
