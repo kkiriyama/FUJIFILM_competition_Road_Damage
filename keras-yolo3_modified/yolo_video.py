@@ -76,6 +76,21 @@ def calc_area(box):
     h = int(box[3]) - int(box[0])
     return w * h 
 
+def calc_iou(box_a, box_b):
+    a_center = ((box_a[0] + box_a[2]) / 2, (box_a[1], box_a[3]) / 2)
+    b_center = ((box_b[0] + box_b[2]) / 2, (box_b[1], box_b[3]) / 2)
+
+    i_width = (box_a[2] - box_a[0])/2 + (box_b[2] - box_b[0])/2 - np.abs(a_center[0] - b_center[0])
+    i_height = (box_a[3] - box_a[1])/2 + (box_b[3] - box_b[1])/2 - np.abs(a_center[1] - b_center[1])
+
+    i_area = i_height * i_width
+
+    a_area = calc_area(box_a)
+    b_area = calc_area(box_b)
+
+    return i_area/(a_area + b_area - i_area)
+
+
 def scaling_box(box, scale):
     xmin = int(box[0])
     ymin = int(box[1])
@@ -275,22 +290,29 @@ if __name__ == '__main__':
                 c_box_list = box_list[index_list, :]
                 c_score_list = score_list[index_list]
 
-                c_box_list = np.array(c_box_list)
+                idx = np.argsort(c_score_list)
+                idx = idx[::-1]
 
-                c_box_tf_list = c_box_list[:, [1, 0, 3, 2]]
-                c_score_tf_list = np.array(c_score_list)
+                output_indices = []
 
-                box_tf = tf.Variable(c_box_tf_list, dtype = tf.float32)
-                score_tf = tf.Variable(c_score_tf_list, dtype = tf.float32)
+                for i in idx:
+                    if len(output_indices) == 0:
+                        output_indices.append(i)
+                    else:
+                        is_suppressed = False 
 
-                output_indices = tf.image.non_max_suppression(
-                    box_tf,
-                    score_tf,
-                    max_output_size = 10
-                )
+                        if len(output_indices) >= 6:
+                            break
 
-                sess.run(tf.global_variables_initializer())
-                output_indices = sess.run(output_indices)
+                        for j in output_indices:
+                            current_box = c_box_list[i, :]                        
+                            compare_box = c_box_list[j, :]
+                            iou = calc_iou(current_box, compare_box)
+                            if iou >= 0.3:
+                                is_suppressed = True
+                        
+                        if not is_suppressed:
+                            output_indices.append(i)
 
                 output_c_box_list = c_box_list[output_indices]
 
