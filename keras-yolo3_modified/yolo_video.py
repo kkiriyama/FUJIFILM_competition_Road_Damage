@@ -72,8 +72,8 @@ def calc_score_wrapper(x):
 
 
 def calc_area(box):
-    w = int(box[2]) - int(box[1])
-    h = int(box[3]) - int(box[0])
+    w = int(box[2]) - int(box[0])
+    h = int(box[3]) - int(box[1])
     return w * h 
 
 def calc_iou(box_a, box_b):
