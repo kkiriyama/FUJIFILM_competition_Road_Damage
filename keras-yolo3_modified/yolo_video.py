@@ -113,24 +113,24 @@ def scaling_box(box, scale):
     return [s_xmin, s_ymin, s_xmax, s_ymax]
 
 def detect_img(yolo):
-    img_list = os.listdir('./test')
+    img_list = os.listdir('../../test')
     img_llist = natsorted(img_list)
     output_list = []
     for img in tqdm(img_list):
         img_name_withext = os.path.basename(img)
         img_name = os.path.splitext(img_name_withext)[0]
         try:
-            image = Image.open('./test/' + img)
+            image = Image.open('../../test/' + img)
         except:
             print('Open Error! Try again!')
             continue
         else:
             r_image, n_cls_list, b_box_list, score_list = yolo.detect_image(image)
             new_b_box_list = []
-            scale = 0.1
+            scale = 0.06
             for i, cls in enumerate(n_cls_list):
                 if cls in ['1', '2', '3', '4']:
-                    if calc_area(b_box_list[i]) > 0:
+                    if calc_area(b_box_list[i]) >0:
                         new_b_box_list.append(scaling_box(b_box_list[i], scale))
                     else:
                         new_b_box_list.append(b_box_list[i])
@@ -146,7 +146,7 @@ def detect_img(yolo):
                         new_b_box_list.append(b_box_list[i])
             assert len(n_cls_list) == len(new_b_box_list)
             output_list.append([img_name_withext, n_cls_list, new_b_box_list, score_list])
-    # yolo.close_session()
+    yolo.close_session()
     return output_list
 
 def generate_xml(output_list):
@@ -255,10 +255,12 @@ if __name__ == '__main__':
     """
     print("Image detection mode")
 
+    FLAGS.use_CV = False
+
     if FLAGS.use_CV:
         rets = []
-        for i in range(0, 5):
-            FLAGS.model_path = './YOLO_5CV/CV_final_%d.h5'%(i)
+        for i in range(2, 5):
+            FLAGS.model_path = './good_models/CV_final_0%d.h5'%(i)
             FLAGS.anchors = 'model_data/yolo_anchors.txt'
             output_list = detect_img(YOLO(**vars(FLAGS)))
 
@@ -273,7 +275,7 @@ if __name__ == '__main__':
             class_list = []
             box_list = []
             score_list = []
-            for i in range(0, 5):
+            for i in range(3):
                 class_list.extend(rets[i][j][1])
                 box_list.extend(rets[i][j][2])
                 score_list.extend(rets[i][j][3])
@@ -308,7 +310,7 @@ if __name__ == '__main__':
                             current_box = c_box_list[i]                        
                             compare_box = c_box_list[j]
                             iou = calc_iou(current_box, compare_box)
-                            if iou >= 0.3:
+                            if iou >= 0.1:
                                 is_suppressed = True
                         
                         if not is_suppressed:
@@ -331,11 +333,10 @@ if __name__ == '__main__':
         f.close()
         
     else:
-        FLAGS.model = './logs/000/trained_weights_final_0.h5'
+        FLAGS.model_path = './good_models/CV_final_01.h5'
         output_list = detect_img(YOLO(**vars(FLAGS)))
         xml = generate_xml(output_list)
-        f = open('YOLO_answer_3.xml', 'w')
+        f = open('YOLO_answer_576.xml', 'w')
         f.write(xml)
         f.close()
-
 
