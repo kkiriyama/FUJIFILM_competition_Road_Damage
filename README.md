@@ -1,6 +1,6 @@
 # Data Science Challenge by FUJIFILM AI Academy Brain(s) Road Damage
 
-解答者：藏田展洋（東京大学医学部医学科4年）
+解答者：kkiriyama
 
 ## ファイルの説明
 - utils.py ... 配布された600 * 600の画像をモデルに合わせてリサイズするためのファイルです。
